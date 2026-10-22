@@ -295,8 +295,41 @@ def main():
     print()
 
 
-# Run main() only when this file is executed directly,
-# not when it's imported as a module by another script.
+# Print a portfolio-level summary below the table
+    total_gain = total_value - total_cost
+    total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
+
+    print(f"\n  Total Cost Basis : ${total_cost:>10.2f}")
+    print(f"  Total Value      : ${total_value:>10.2f}")
+    sign = "+" if total_gain >= 0 else ""
+    print(f"  Total Gain/Loss  : {sign}${total_gain:>9.2f}  ({sign}{total_gain_pct:.2f}%)")
+    print()
+
+    # --- TRIMITERE PE TELEGRAM ---
+    import os
+    import requests
+
+    report_text = f"📊 *Paco Portfolio Analysis* — {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
+    report_text += f"• Perioadă: {period_label}\n"
+    report_text += f"• Cost Total: ${total_cost:,.2f}\n"
+    report_text += f"• Valoare Curentă: ${total_value:,.2f}\n"
+    report_text += f"• Profit/Loss: {sign}${total_gain:,.2f} ({sign}{total_gain_pct:.2f}%)\n"
+
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+
+    if token and chat_id:
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = {
+            "chat_id": chat_id,
+            "text": report_text,
+            "parse_mode": "Markdown"
+        }
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print("Mesajul a fost trimis cu succes pe Telegram!")
+        else:
+            print(f"Erore la trimiterea pe Telegram: {response.text}")
 if __name__ == "__main__":
     main()
 
