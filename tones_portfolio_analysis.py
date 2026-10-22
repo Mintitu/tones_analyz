@@ -174,7 +174,7 @@ def main():
     sign = "+" if total_gain >= 0 else ""
 
     # --- FORMAT FĂRĂ VALOARE TOTALĂ ÎN TITLU ---
-    report_text = f"📈 *PACO PORTFOLIO* — {datetime.now().strftime('%d %b %Y')}\n"
+    report_text = f"📈 *TONES PORTFOLIO* — {datetime.now().strftime('%d %b %Y')}\n"
     report_text += f"📊 *P&L Total:* `{sign}${total_gain:,.2f}` (`{sign}{total_gain_pct:.2f}%`)\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
