@@ -1,5 +1,5 @@
 """
-Tones's Portfolio analysis: Ultra-compact layout with reasoning and Target Price placement
+Tones's Portfolio analysis: Ultra-clean layout without extra symbols
 """
 
 import os
@@ -123,13 +123,13 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
 
 def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | None) -> tuple[str, str]:
     if rsi is not None and rsi < 35 and gain_pct < 0:
-        return "🟢 BUY", "Supravândut + Preț mic"
+        return "🟢 BUY", "Supravândut pret mic"
     elif rsi is not None and rsi > 70 and gain_pct > 20:
-        return "🔴 TAKE PROFIT", "Supracumpărat + Profit"
+        return "🔴 TAKE PROFIT", "Supracumpărat profit"
     elif gain_pct < -20:
         return "🔴 CUT LOSS", "Risc scădere mare"
     elif gap is not None and gap < -25:
-        return "🟢 STR BUY", "Discount mare din vârf"
+        return "🟢 STR BUY", "Discount din vârf"
     else:
         return "🟡 HOLD", "Echilibrat"
 
@@ -186,32 +186,32 @@ def main():
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    # --- HEADER ---
+    # --- HEADER CURĂȚAT ---
     report_text = f"📈 *Portofoliu Tones* {datetime.now().strftime('%d %b %Y')}\n"
-    report_text += f"📊 *P&L Total:* `{sign}{total_gain_pct:.2f}%`\n"
+    report_text += f"📊 *P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    # --- FORMAT COMPLET CU TP DUPĂ PREȚ ȘI MOTIVARE ---
+    # --- FORMAT MINIMALIST FĂRĂ PARANTEZE SAU DOUĂ PUNCTE INUTILE ---
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
         
-        rsi_str = f"RSI:{r['rsi']:.0f}" if r['rsi'] is not None else "RSI:-"
-        gap_str = f"Gap:{r['gap']:.0f}%" if r['gap'] is not None else "Gap:-"
+        rsi_str = f"RSI {r['rsi']:.0f}" if r['rsi'] is not None else "RSI -"
+        gap_str = f"Gap {r['gap']:.0f}%" if r['gap'] is not None else "Gap -"
         price_str = f"${r['cur_price']:.2f}" if r['cur_price'] is not None else "N/A"
-        tp_str = f"TP:${r['target_price']:.2f}" if r['target_price'] is not None else "TP:-"
+        tp_str = f"TP ${r['target_price']:.2f}" if r['target_price'] is not None else "TP -"
         
-        ev_str = f"EV:{r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV:-"
+        ev_str = f"EV {r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV -"
         roic_val = r['roic'] * 100 if r['roic'] is not None else None
-        roic_str = f"ROIC:{roic_val:.1f}%" if roic_val is not None else "ROIC:-"
-        fwd_pe_str = f"FwdPE:{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE:-"
+        roic_str = f"ROIC {roic_val:.1f}%" if roic_val is not None else "ROIC -"
+        fwd_pe_str = f"FwdPE {r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE -"
 
-        # Rândul 1: Symbol (%P&L) Pret TP — Signal
-        report_text += f"▪️ *{r['symbol']}* ({p_sign}{p_pct:.1f}%) {price_str} [{tp_str}] — {r['signal']}\n"
-        # Rândul 2: Indicatori tehnici pe font de cod
+        # Rândul 1: Symbol +P&L% Pret TP Signal
+        report_text += f"▪️ *{r['symbol']}* {p_sign}{p_pct:.1f}% {price_str} {tp_str} {r['signal']}\n"
+        # Rândul 2: Indicatori pe font de cod curățat
         report_text += f"`{rsi_str} | {gap_str} | {ev_str} | {roic_str} | {fwd_pe_str}`\n"
-        # Rândul 3: Motivarea pe scurt
-        report_text += f"_Motiv: {r['reason']}_\n"
+        # Rândul 3: Motivarea scurtă
+        report_text += f"{r['reason']}\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
@@ -225,7 +225,7 @@ def main():
         }
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            print("Raportul complet a fost trimis pe Telegram!")
+            print("Raportul curățat a fost trimis pe Telegram!")
         else:
             print(f"Erore: {response.text}")
 
