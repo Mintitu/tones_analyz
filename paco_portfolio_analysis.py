@@ -59,9 +59,51 @@ def parse_args() -> argparse.Namespace:
 
 # ------- csv loading
 def load_holdings(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path, usecols=["Symbol", "Purchase Price", "Quantity"])
-    df.columns = ["symbol", "purchase_price", "quantity"]
-    return df
+    df_raw = pd.read_csv(path)
+    
+    # Verificăm dacă fișierul este un jurnal de tranzacții (conține coloanele Ticker și Type)
+    if "Ticker" in df_raw.columns and "Type" in df_raw.columns:
+        positions = {}
+        for _, row in df_raw.iterrows():
+            ticker = str(row['Ticker']).strip()
+            t_type = str(row['Type']).strip().lower()
+            try:
+                shares = float(row['Shares'])
+                value = float(row['Value'])
+            except (ValueError, TypeError):
+                continue
+            
+            if ticker not in positions:
+                positions[ticker] = {'shares': 0.0, 'total_cost': 0.0}
+                
+            if t_type == 'buy':
+                positions[ticker]['shares'] += shares
+                positions[ticker]['total_cost'] += value
+            elif t_type == 'sell':
+                current_shares = positions[ticker]['shares']
+                if current_shares > 0:
+                    avg_cost = positions[ticker]['total_cost'] / current_shares
+                    positions[ticker]['shares'] -= shares
+                    positions[ticker]['total_cost'] -= shares * avg_cost
+                    if positions[ticker]['shares'] < 1e-6:
+                        positions[ticker]['shares'] = 0.0
+                        positions[ticker]['total_cost'] = 0.0
+                        
+        holdings = []
+        for ticker, data in positions.items():
+            if data['shares'] > 1e-6:
+                avg_price = data['total_cost'] / data['shares']
+                holdings.append({
+                    'symbol': ticker,
+                    'purchase_price': avg_price,
+                    'quantity': data['shares']
+                })
+        return pd.DataFrame(holdings)
+    else:
+        # Format clasic de dețineri
+        df = pd.read_csv(path, usecols=["Symbol", "Purchase Price", "Quantity"])
+        df.columns = ["symbol", "purchase_price", "quantity"]
+        return df
 
 
 # ------- fetching data from Yahoo Finance
