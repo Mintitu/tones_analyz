@@ -1,5 +1,5 @@
 """
-Tones's Portfolio analysis: Compact format for Telegram reporting
+Tones's Portfolio analysis: Ultra-compact format for Telegram reporting
 """
 
 import os
@@ -101,20 +101,15 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
     hist = t.history(period="1y")
 
     current_price = fast.last_price or info.get("currentPrice") or info.get("regularMarketPrice")
-    prev_close = fast.previous_close or info.get("previousClose") or info.get("regularMarketPreviousClose")
-
     period_high = float(hist["High"].max()) if not hist.empty else None
     gap_from_high = ((current_price - period_high) / period_high * 100) if (current_price and period_high) else None
 
     rsi = calculate_rsi(hist)
-    ev_ebitda = info.get("enterpriseToEbitda")
 
     return {
         "current_price": current_price,
-        "period_high": period_high,
         "gap_from_high": gap_from_high,
         "rsi": rsi,
-        "ev_ebitda": ev_ebitda,
     }
 
 
@@ -152,7 +147,7 @@ def main():
         try:
             q = fetch_quote(symbol, period)
         except Exception as e:
-            q = {"current_price": None, "gap_from_high": None, "rsi": None, "ev_ebitda": None}
+            q = {"current_price": None, "gap_from_high": None, "rsi": None}
 
         cur = q["current_price"]
         cost_basis = purchase_price * quantity
@@ -172,16 +167,15 @@ def main():
             "rsi": q["rsi"],
             "gap": q["gap_from_high"],
             "signal": signal,
-            "reason": reason
         })
 
     total_gain = total_value - total_cost
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    # --- FORMAT COMPACT PE TELEGRAM ---
+    # --- FORMAT FĂRĂ VALOARE TOTALĂ ÎN TITLU ---
     report_text = f"📈 *PACO PORTFOLIO* — {datetime.now().strftime('%d %b %Y')}\n"
-    report_text += f"💰 Valoare: `${total_value:,.2f}` | P&L: `{sign}${total_gain:,.2f}` (`{sign}{total_gain_pct:.2f}%`)\n"
+    report_text += f"📊 *P&L Total:* `{sign}${total_gain:,.2f}` (`{sign}{total_gain_pct:.2f}%`)\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
     for r in rows:
@@ -191,7 +185,6 @@ def main():
         gap_str = f"Gap:{r['gap']:.0f}%" if r['gap'] is not None else "Gap:-"
         price_str = f"${r['cur_price']:.2f}" if r['cur_price'] is not None else "N/A"
 
-        # Format pe un singur rând curat
         report_text += f"▪️ *{r['symbol']}* ({p_sign}{p_pct:.1f}%) | {price_str} | {rsi_str}, {gap_str} | {r['signal']}\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
