@@ -125,7 +125,7 @@ def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | Non
     elif gain_pct < -20:
         return "🔴 CUT LOSS"
     elif gap is not None and gap < -25:
-        return "🟢 STRONG BUY"
+        return "🟢 STR BUY"
     else:
         return "🟡 HOLD"
 
@@ -180,7 +180,7 @@ def main():
     sign = "+" if total_gain >= 0 else ""
 
     # --- HEADER ---
-    report_text = f"📈 *Analiza Portofoliu Tones* — {datetime.now().strftime('%d %b %Y')}\n"
+    report_text = f"📈 *Analiza Portofoliu Tones* {datetime.now().strftime('%d %b %Y')}\n"
     report_text += f"📊 *P&L Total:* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
