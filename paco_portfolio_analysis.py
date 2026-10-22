@@ -11,6 +11,8 @@ Usage:
 """
 
 # ------- library imports
+import os
+import requests
 import argparse       # used to parse command-line arguments (e.g. -p 1y)
 import sys            # used to exit the program with an error message when needed
 import warnings       # used to silence deprecation messages from third-party libraries (I need to find a better way to manage these)
@@ -330,18 +332,7 @@ def main():
             print("Mesajul a fost trimis cu succes pe Telegram!")
         else:
             print(f"Erore la trimiterea pe Telegram: {response.text}")
-if __name__ == "__main__":
-    main()
-
-    import os
-    import requests
-
-    # Colectezi tot textul raportului într-o singură variabilă
-    report_text = f"Portfolio Analysis — {datetime.now().strftime('%Y-%m-%d %H:%M')} — Period: {period_label}\n"
-    report_text += f"Total Cost: ${total_cost:.2f} | Value: ${total_value:.2f} | P&L: ${total_gain:.2f} ({total_gain_pct:.2f}%)\n\n"
-    report_text += "Verifică repository-ul pe GitHub pentru detalii complete."
-
-    # Trimiterea automată pe Telegram dacă variabilele sunt setate
+        # Trimiterea automată pe Telegram dacă variabilele sunt setate
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
 
@@ -356,4 +347,11 @@ if __name__ == "__main__":
             print("Mesajul a fost trimis cu succes pe Telegram!")
         else:
             print(f"Erore la trimiterea pe Telegram: {response.text}")
+            
+        # Colectezi tot textul raportului într-o singură variabilă
+    report_text = f"Portfolio Analysis — {datetime.now().strftime('%Y-%m-%d %H:%M')} — Period: {period_label}\n"
+    report_text += f"Total Cost: ${total_cost:.2f} | Value: ${total_value:.2f} | P&L: ${total_gain:.2f} ({total_gain_pct:.2f}%)\n\n"
+    report_text += "Verifică repository-ul pe GitHub pentru detalii complete."
 
+if __name__ == "__main__":
+    main()
