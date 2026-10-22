@@ -1,4 +1,4 @@
-# 📈 Paco's Portfolio Analyzer
+# 📈 Tones Portfolio Analyzer
 
 A simple python script that reads your stock holdings from a csv file downloaded from Yahoo Finance, fetches **live market data** from Yahoo Finance, and prints a color-coded summary table with prices, performance, dividends, and actionable signals. Everything is displayed in your terminal. 
 
