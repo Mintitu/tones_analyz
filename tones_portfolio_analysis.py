@@ -1,5 +1,5 @@
 """
-Tones's Portfolio analysis: Ultra-compact 2-line layout per stock
+Tones's Portfolio analysis: Ultra-compact 2-line layout with TP and Reason on Line 1
 """
 
 import os
@@ -191,7 +191,7 @@ def main():
     report_text += f"📊 *P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    # --- FORMAT MAXIM COMPACT (EXACT 2 RÂNDURI / COMPANIE) ---
+    # --- FORMAT EXACT PE 2 RÂNDURI PER STOC ---
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
@@ -206,9 +206,9 @@ def main():
         roic_str = f"ROIC {roic_val:.1f}%" if roic_val is not None else "ROIC -"
         fwd_pe_str = f"FwdPE {r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE -"
 
-        # Rândul 1: Bulină Symbol +P&L% Preț TP Motiv
+        # Rândul 1: Bulină Symbol +P&L% Preț TP (Motivare)
         report_text += f"{r['bullet']} *{r['symbol']}* {p_sign}{p_pct:.1f}% {price_str} {tp_str} ({r['reason']})\n"
-        # Rândul 2: Indicatori pe font mic (monospace)
+        # Rândul 2: Indicatori tehnici pe font mic (monospace)
         report_text += f"`{rsi_str} | {gap_str} | {ev_str} | {roic_str} | {fwd_pe_str}`\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
