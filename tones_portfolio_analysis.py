@@ -180,11 +180,11 @@ def main():
     sign = "+" if total_gain >= 0 else ""
 
     # --- HEADER ---
-    report_text = f"📈 *Analiza Portofoliu Tones* {datetime.now().strftime('%d %b %Y')}\n"
+    report_text = f"📈 *Analiza Portofoliu Tones* — {datetime.now().strftime('%d %b %Y')}\n"
     report_text += f"📊 *P&L Total:* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    # --- FORMAT NOU SUPER COMPACT ---
+    # --- FORMAT NOU AJUSTAT ---
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
@@ -197,10 +197,10 @@ def main():
         roic_val = r['roic'] * 100 if r['roic'] is not None else None
         roic_str = f"ROIC:{roic_val:.1f}%" if roic_val is not None else "ROIC:-"
 
-        # Rândul 1: Symbol Pret (%P&L) — Signal
-        report_text += f"▪️ *{r['symbol']}* {price_str} ({p_sign}{p_pct:.1f}%) — {r['signal']}\n"
-        # Rândul 2: Font de cod/monospace scurtat pentru indicatori
-        report_text += f"   `{rsi_str}` `{gap_str}` `{ev_str}` `{roic_str}`\n\n"
+        # Rândul 1: Symbol (%P&L) Pret — Signal
+        report_text += f"▪️ *{r['symbol']}* ({p_sign}{p_pct:.1f}%) {price_str} — {r['signal']}\n"
+        # Rândul 2: Tot rândul într-un singur bloc de cod (font mai mic)
+        report_text += f"`{rsi_str} | {gap_str} | {ev_str} | {roic_str}`\n\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
