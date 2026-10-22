@@ -1,34 +1,21 @@
 """
-Paco's Portfolio analysis: reads list of stock from a csv file, fetches live data from Yahoo Finance,
-and prints a summary table with current prices, daily change, and Profit and Loss summary.
-
-Requirements: pip3 install yfinance pandas tabulate
-
-Usage:
-    python3 paco_portfolio_analysis.py              # defaults to 6-month look-back
-    python3 paco_portfolio_analysis.py -p 1y        # use a 1-year look-back instead
-    python3 paco_portfolio_analysis.py --help       # show all available options
+Tones's Portfolio analysis with Advanced Technical & Fundamental Metrics + Telegram Reporting
 """
 
-# ------- library imports
 import os
+import sys
+import warnings
+import argparse
+from pathlib import Path
+from datetime import datetime
+
+import pandas as pd
+import yfinance as yf
 import requests
-import argparse       # used to parse command-line arguments (e.g. -p 1y)
-import sys            # used to exit the program with an error message when needed
-import warnings       # used to silence deprecation messages from third-party libraries
-from pathlib import Path      # used to work with file paths
-from datetime import datetime # used for printing the current date/time in the report header
+from tabulate import tabulate
 
-import pandas as pd           # used to read the csv file and data analysis
-import yfinance as yf         # downloads live and historical stock data from Yahoo Finance
-from tabulate import tabulate # formats the output as a user-friendly table
-
-# hide deprecation warnings that come from the yfinance library
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-
-# ------- Configuration
 
 CSV_FILE = Path(__file__).parent / "paco_portfolio_20260517.csv"
 
@@ -37,13 +24,6 @@ PERIOD_LABELS = {
     "1y": "1 Year", "2y": "2 Years", "5y": "5 Years", "ytd": "Year-to-Date",
 }
 
-CLR_RED    = "\033[91m"
-CLR_GREEN  = "\033[92m"
-CLR_YELLOW = "\033[93m"
-CLR_RESET  = "\033[0m"
-
-
-# ------- Command-line argument parsing
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Portfolio analysis using Yahoo Finance data.")
@@ -57,11 +37,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-# ------- csv loading
 def load_holdings(path: Path) -> pd.DataFrame:
     df_raw = pd.read_csv(path)
     
-    # Verificăm dacă fișierul este un jurnal de tranzacții (conține coloanele Ticker și Type)
     if "Ticker" in df_raw.columns and "Type" in df_raw.columns:
         positions = {}
         for _, row in df_raw.iterrows():
@@ -100,18 +78,28 @@ def load_holdings(path: Path) -> pd.DataFrame:
                 })
         return pd.DataFrame(holdings)
     else:
-        # Format clasic de dețineri
         df = pd.read_csv(path, usecols=["Symbol", "Purchase Price", "Quantity"])
         df.columns = ["symbol", "purchase_price", "quantity"]
         return df
 
 
-# ------- fetching data from Yahoo Finance
+def calculate_rsi(hist_df: pd.DataFrame, window: int = 14) -> float | None:
+    if hist_df.empty or len(hist_df) < window + 1:
+        return None
+    delta = hist_df['Close'].diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+    rs = gain / loss
+    rsi_series = 100 - (100 / (1 + rs))
+    last_rsi = rsi_series.iloc[-1]
+    return float(last_rsi) if not pd.isna(last_rsi) else None
+
+
 def fetch_quote(ticker_symbol: str, period: str) -> dict:
     t = yf.Ticker(ticker_symbol)
     info = t.info
     fast = t.fast_info
-    hist = t.history(period=period)
+    hist = t.history(period="1y") # Folosim 1 an pentru un RSI și Max/Min mai precis
 
     current_price = fast.last_price or info.get("currentPrice") or info.get("regularMarketPrice")
     prev_close = fast.previous_close or info.get("previousClose") or info.get("regularMarketPreviousClose")
@@ -122,59 +110,62 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
     period_high = float(hist["High"].max()) if not hist.empty else None
     period_low = float(hist["Low"].min()) if not hist.empty else None
 
-    period_start = float(hist["Close"].iloc[0]) if not hist.empty else None
-    period_ret = ((current_price - period_start) / period_start * 100) if (current_price and period_start) else None
+    # Calcul GAP față de maxim (Cât % mai are până la Vârf)
+    gap_from_high = ((current_price - period_high) / period_high * 100) if (current_price and period_high) else None
 
-    raw_yield = info.get("dividendYield") or info.get("trailingAnnualDividendYield")
-    dividend_yield = raw_yield if raw_yield else None
+    # Indicatori avansați
+    rsi = calculate_rsi(hist)
+    ev_ebitda = info.get("enterpriseToEbitda")
 
     return {
         "name": (info.get("shortName") or info.get("longName") or "")[:28],
         "current_price": current_price,
-        "prev_close": prev_close,
-        "daily_chg": daily_chg,
         "daily_chg_pct": daily_chg_pct,
         "period_high": period_high,
         "period_low": period_low,
-        "period_ret": period_ret,
-        "dividend_yield": dividend_yield,
-        "currency": info.get("currency", ""),
+        "gap_from_high": gap_from_high,
+        "rsi": rsi,
+        "ev_ebitda": ev_ebitda,
     }
 
 
-# ------- Period position helper
-def week52_position(current, low, high) -> float | None:
-    if None in (current, low, high) or high == low:
-        return None
-    return (current - low) / (high - low)
+def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | None, ev_ebitda: float | None) -> tuple[str, str]:
+    """
+    Generează o recomandare inteligentă combinând P&L, RSI, GAP și EV/EBITDA.
+    """
+    reasons = []
+    
+    # Factor 1: RSI
+    if rsi is not None:
+        if rsi < 35:
+            reasons.append("RSI Scăzut (Oportunitate)")
+        elif rsi > 70:
+            reasons.append("RSI Ridicat (Supracumpărat)")
+
+    # Factor 2: GAP față de Maxim
+    if gap is not None and gap < -20:
+        reasons.append("Reducere >20% din Vârf")
+
+    # Factor 3: P&L personal
+    if gain_pct > 25:
+        reasons.append("Profit excelent marcabil")
+    elif gain_pct < -15:
+        reasons.append("Pierdere semnificativă")
+
+    # Decizie finală
+    if rsi is not None and rsi < 35 and gain_pct < 0:
+        return "🟢 BUY MORE", "Supravândut + Preț bun de acumulare"
+    elif rsi is not None and rsi > 70 and gain_pct > 20:
+        return "🔴 SELL / TAKE PROFIT", "Supracumpărat + Profit mare"
+    elif gain_pct < -20 and (rsi is None or rsi > 50):
+        return "🔴 SELL (CUT LOSS)", "Scădere sub pragul de risc"
+    elif gap is not None and gap < -25 and gain_pct > -10:
+        return "🟢 STRONG BUY", "Corecție mare din vârf (Discount)"
+    else:
+        return "🟡 HOLD", "Echilibrat / Monitorizează"
 
 
-# ------- Strength label
-def strength_label(pos52: float | None) -> str:
-    if pos52 is None:
-        return "  N/A"
-    if pos52 >= 0.60:
-        return "Strong"
-    if pos52 <= 0.35:
-        return "  Weak"
-    return "Neutral"
-
-
-# ------- Trading signal
-def signal_label(gain_pct: float | None, pos52: float | None) -> str:
-    if gain_pct is None or pos52 is None:
-        return "    N/A"
-    if gain_pct < -20:
-        return "   Sell"
-    if gain_pct < 0 and pos52 < 0.35:
-        return "   Sell"
-    if gain_pct > 30 and pos52 >= 0.70:
-        return "Buy More"
-    return "    Keep"
-
-
-# ------- Output table builder
-def build_table(holdings: pd.DataFrame, period: str) -> tuple[list[list], float, float]:
+def build_table(holdings: pd.DataFrame, period: str):
     rows = []
     total_cost = 0.0
     total_value = 0.0
@@ -188,59 +179,39 @@ def build_table(holdings: pd.DataFrame, period: str) -> tuple[list[list], float,
         try:
             q = fetch_quote(symbol, period)
         except Exception as e:
-            print(f"  WARNING: could not fetch {symbol}: {e}")
-            q = {k: None for k in ["name", "current_price", "prev_close", "daily_chg",
-                                    "daily_chg_pct", "period_high", "period_low", "period_ret",
-                                    "dividend_yield", "currency"]}
+            print(f"  WARNING: error fetching {symbol}: {e}")
+            q = {k: None for k in ["name", "current_price", "daily_chg_pct", "period_high", "period_low", "gap_from_high", "rsi", "ev_ebitda"]}
 
         cur = q["current_price"]
         cost_basis = purchase_price * quantity
         cur_value = (cur * quantity) if cur else None
         gain = (cur_value - cost_basis) if cur_value is not None else None
-        gain_pct = (gain / cost_basis * 100) if (gain is not None and cost_basis) else None
+        gain_pct = (gain / cost_basis * 100) if (gain is not None and cost_basis) else 0.0
 
         total_cost += cost_basis
         if cur_value is not None:
             total_value += cur_value
 
-        pos52 = week52_position(cur, q["period_low"], q["period_high"])
+        rec_signal, rec_reason = generate_recommendation(gain_pct, q["rsi"], q["gap_from_high"], q["ev_ebitda"])
 
-        def fmt_price(v):
-            return f"{v:>8.3f}" if v is not None else "       N/A"
-
-        def fmt_pct(v, sign=True):
-            if v is None:
-                return "   N/A"
-            prefix = "+" if (sign and v >= 0) else ""
-            return f"{prefix}{v:.2f}%"
-
-        def fmt_money(v):
-            return f"{v:>9.2f}" if v is not None else "       N/A"
-
-        div = q["dividend_yield"]
-        div_cell = f"{div:.2f}%" if div else "    —"
-
-        rows.append([
-            symbol,
-            q["name"],
-            fmt_price(cur),
-            fmt_pct(q["daily_chg_pct"]),
-            fmt_pct(q["period_ret"]),
-            fmt_price(q["period_high"]),
-            fmt_price(q["period_low"]),
-            f"{quantity:.0f}",
-            fmt_price(purchase_price),
-            fmt_money(cur_value),
-            fmt_money(gain),
-            div_cell,
-            strength_label(pos52),
-            signal_label(gain_pct, pos52),
-        ])
+        rows.append({
+            "symbol": symbol,
+            "name": q["name"],
+            "qty": quantity,
+            "avg_price": purchase_price,
+            "cur_price": cur,
+            "gain_pct": gain_pct,
+            "day_chg": q["daily_chg_pct"],
+            "gap": q["gap_from_high"],
+            "rsi": q["rsi"],
+            "ev_ebitda": q["ev_ebitda"],
+            "signal": rec_signal,
+            "reason": rec_reason
+        })
 
     return rows, total_cost, total_value
 
 
-# ------- Entry point
 def main():
     args = parse_args()
     period = args.period
@@ -249,61 +220,46 @@ def main():
     if not CSV_FILE.exists():
         sys.exit(f"CSV not found: {CSV_FILE}")
 
-    print(f"\nPortfolio Analysis  —  {datetime.now().strftime('%Y-%m-%d %H:%M')}  |  Period: {period_label}")
-    print("=" * 100)
-
     holdings = load_holdings(CSV_FILE)
     rows, total_cost, total_value = build_table(holdings, period)
-    print(" " * 40)
-
-    headers = [
-        "Symbol", "Name", "Price", "Day%", "Pd Ret%",
-        "Pd Hi", "Pd Lo",
-        "Qty", "Avg Cost",
-        "Cur Value", "Gain/Loss",
-        "Div Yield", "Strength", "Signal",
-    ]
-
-    table = tabulate(rows, headers=headers, tablefmt="rounded_outline", stralign="right")
-    table = table.replace("   Sell", f"{CLR_RED}   Sell{CLR_RESET}")
-    table = table.replace("Buy More", f"{CLR_GREEN}Buy More{CLR_RESET}")
-    table = table.replace("    Keep", f"{CLR_YELLOW}    Keep{CLR_RESET}")
-    print(table)
 
     total_gain = total_value - total_cost
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
-
-    print(f"\n  Total Cost Basis : ${total_cost:>10.2f}")
-    print(f"  Total Value      : ${total_value:>10.2f}")
     sign = "+" if total_gain >= 0 else ""
-    print(f"  Total Gain/Loss  : {sign}${total_gain:>9.2f}  ({sign}{total_gain_pct:.2f}%)")
-    print()
 
-    # --- TRIMITERE PE TELEGRAM DETALIAT PE FIECARE ACȚIUNE ---
-    report_text = f"📊 *Paco Portfolio Analysis* — {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
-    report_text += f"• Perioadă: {period_label}\n"
-    report_text += f"• Cost Total: ${total_cost:,.2f}\n"
-    report_text += f"• Valoare Curentă: ${total_value:,.2f}\n"
-    report_text += f"• Profit/Loss Total: {sign}${total_gain:,.2f} ({sign}{total_gain_pct:.2f}%)\n\n"
-    report_text += "*Dețineri active:*\n"
+    # --- FORMATARE MESAJ TELEGRAM SPANȚAT ȘI STRUCTURAT ---
+    report_text = f"📈 *PACO PORTFOLIO REPORT* — {datetime.now().strftime('%d %b %Y %H:%M')}\n"
+    report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
+    report_text += f"💰 *Cost Total Basis:* `${total_cost:,.2f}`\n"
+    report_text += f"💎 *Valoare Portofoliu:* `${total_value:,.2f}`\n"
+    report_text += f"📊 *P&L Total:* `{sign}${total_gain:,.2f}` (`{sign}{total_gain_pct:.2f}%`)\n"
+    report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    report_text += "📋 *ANALIZĂ PE FIECARE ACȚIUNE:*\n\n"
 
-    # Adăugăm fiecare acțiune în mesaj
     for r in rows:
-        sym = r[0]       # Symbol
-        name = r[1]      # Name
-        qty = r[7]       # Qty
-        cur_val = r[9]   # Cur Value
-        gain_loss = r[10]# Gain/Loss
-        signal = r[13].strip() # Signal (Buy More, Sell, Keep)
+        sym = r['symbol']
+        p_pct = r['gain_pct']
+        p_sign = "+" if p_pct >= 0 else ""
         
-        # Emoji în funcție de semnal
-        emoji = "🟡"
-        if "Buy More" in signal:
-            emoji = "🟢"
-        elif "Sell" in signal:
-            emoji = "🔴"
+        rsi_str = f"{r['rsi']:.1f}" if r['rsi'] is not None else "N/A"
+        gap_str = f"{r['gap']:.1f}%" if r['gap'] is not None else "N/A"
+        ev_str = f"{r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "N/A"
+        
+        # Emoji semnal
+        if "BUY" in r['signal']:
+            icon = "🟢"
+        elif "SELL" in r['signal']:
+            icon = "🔴"
+        else:
+            icon = "🟡"
 
-        report_text += f"{emoji} *{sym}* ({qty} buc): Val: ${cur_val} | P&L: ${gain_loss} | [{signal}]\n"
+        # Card individual pentru fiecare acțiune
+        report_text += f"{icon} *{sym}* ({r['qty']:.0f} buc)\n"
+        report_text += f"├ 💵 Preț: `${r['cur_price']:.2f}` (Avg: `${r['avg_price']:.2f}`)\n"
+        report_text += f"├ 📊 *P&L: {p_sign}{p_pct:.2f}%*\n"
+        report_text += f"├ 📉 GAP Vârf: `{gap_str}` | RSI: `{rsi_str}` | EV/EBITDA: `{ev_str}`\n"
+        report_text += f"└ 🎯 *Rec:* `{r['signal']}`\n"
+        report_text += f"   _Motiv: {r['reason']}_\n\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
@@ -317,11 +273,12 @@ def main():
         }
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            print("Mesajul detaliat a fost trimis cu succes pe Telegram!")
+            print("Raportul detaliat cu indicatori tehnici a fost trimis pe Telegram!")
         else:
             print(f"Erore la trimiterea pe Telegram: {response.text}")
     else:
-        print("Lipsește TELEGRAM_BOT_TOKEN sau TELEGRAM_CHAT_ID în variabilele de mediu.")
+        print("Lipsește TELEGRAM_BOT_TOKEN sau TELEGRAM_CHAT_ID din mediu.")
+
 
 if __name__ == "__main__":
     main()
