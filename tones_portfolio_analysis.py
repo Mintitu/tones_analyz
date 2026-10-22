@@ -106,8 +106,6 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
 
     rsi = calculate_rsi(hist)
     ev_ebitda = info.get("enterpriseToEbitda")
-    
-    # yfinance nu oferă întotdeauna direct ROIC sub această cheie exactă, încercăm să luăm returnOnCapital sau estimăm din profit
     roic = info.get("returnOnCapital") or info.get("returnOnEquity")
 
     return {
@@ -119,7 +117,7 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
     }
 
 
-def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | None) -> tuple[str, str]:
+def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | None) -> str:
     if rsi is not None and rsi < 35 and gain_pct < 0:
         return "🟢 BUY"
     elif rsi is not None and rsi > 70 and gain_pct > 20:
@@ -181,9 +179,9 @@ def main():
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    # --- FORMAT ACTUALIZAT: Portofoliu XTB, fără sumă în titlu, păstrat P&L în % ---
-    report_text = f"📈 *PORTOFOLIO XTB* — {datetime.now().strftime('%d %b %Y')}\n"
-    report_text += f"📊 *P&L Total:* `{sign}{total_gain_pct:.2f}%` (`{sign}${total_gain:,.2f}`)\n"
+    # --- TITLU ACTUALIZAT ---
+    report_text = f"📈 *Analiza Portofoliu Tones* — {datetime.now().strftime('%d %b %Y')}\n"
+    report_text += f"📊 *P&L Total:* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
     for r in rows:
