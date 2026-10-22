@@ -1,4 +1,4 @@
-name: Paco Stock Analysis
+name: Paco Analysis
 
 on:
   schedule:
