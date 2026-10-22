@@ -279,12 +279,31 @@ def main():
     print(f"  Total Gain/Loss  : {sign}${total_gain:>9.2f}  ({sign}{total_gain_pct:.2f}%)")
     print()
 
-    # --- TRIMITERE PE TELEGRAM (Plasat corect în interiorul lui main) ---
+    # --- TRIMITERE PE TELEGRAM DETALIAT PE FIECARE ACȚIUNE ---
     report_text = f"📊 *Paco Portfolio Analysis* — {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
     report_text += f"• Perioadă: {period_label}\n"
     report_text += f"• Cost Total: ${total_cost:,.2f}\n"
     report_text += f"• Valoare Curentă: ${total_value:,.2f}\n"
-    report_text += f"• Profit/Loss: {sign}${total_gain:,.2f} ({sign}{total_gain_pct:.2f}%)\n"
+    report_text += f"• Profit/Loss Total: {sign}${total_gain:,.2f} ({sign}{total_gain_pct:.2f}%)\n\n"
+    report_text += "*Dețineri active:*\n"
+
+    # Adăugăm fiecare acțiune în mesaj
+    for r in rows:
+        sym = r[0]       # Symbol
+        name = r[1]      # Name
+        qty = r[7]       # Qty
+        cur_val = r[9]   # Cur Value
+        gain_loss = r[10]# Gain/Loss
+        signal = r[13].strip() # Signal (Buy More, Sell, Keep)
+        
+        # Emoji în funcție de semnal
+        emoji = "🟡"
+        if "Buy More" in signal:
+            emoji = "🟢"
+        elif "Sell" in signal:
+            emoji = "🔴"
+
+        report_text += f"{emoji} *{sym}* ({qty} buc): Val: ${cur_val} | P&L: ${gain_loss} | [{signal}]\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
@@ -298,12 +317,11 @@ def main():
         }
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            print("Mesajul a fost trimis cu succes pe Telegram!")
+            print("Mesajul detaliat a fost trimis cu succes pe Telegram!")
         else:
             print(f"Erore la trimiterea pe Telegram: {response.text}")
     else:
         print("Lipsește TELEGRAM_BOT_TOKEN sau TELEGRAM_CHAT_ID în variabilele de mediu.")
-
 
 if __name__ == "__main__":
     main()
