@@ -1,4 +1,4 @@
-name: US Stock Daily Bot
+name: paco Stock
 
 on:
   schedule:
