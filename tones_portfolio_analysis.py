@@ -1,5 +1,5 @@
 """
-Tones's Portfolio analysis: Ultra-compact 2-line layout for Telegram
+Tones's Portfolio analysis: Ultra-compact packed layout for Telegram with Forward PE and Target Price
 """
 
 import os
@@ -107,6 +107,8 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
     rsi = calculate_rsi(hist)
     ev_ebitda = info.get("enterpriseToEbitda")
     roic = info.get("returnOnCapital") or info.get("returnOnEquity")
+    forward_pe = info.get("forwardPE")
+    target_price = info.get("targetMeanPrice")
 
     return {
         "current_price": current_price,
@@ -114,6 +116,8 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
         "rsi": rsi,
         "ev_ebitda": ev_ebitda,
         "roic": roic,
+        "forward_pe": forward_pe,
+        "target_price": target_price,
     }
 
 
@@ -151,7 +155,7 @@ def main():
         try:
             q = fetch_quote(symbol, period)
         except Exception as e:
-            q = {"current_price": None, "gap_from_high": None, "rsi": None, "ev_ebitda": None, "roic": None}
+            q = {"current_price": None, "gap_from_high": None, "rsi": None, "ev_ebitda": None, "roic": None, "forward_pe": None, "target_price": None}
 
         cur = q["current_price"]
         cost_basis = purchase_price * quantity
@@ -172,6 +176,8 @@ def main():
             "gap": q["gap_from_high"],
             "ev_ebitda": q["ev_ebitda"],
             "roic": q["roic"],
+            "forward_pe": q["forward_pe"],
+            "target_price": q["target_price"],
             "signal": signal,
         })
 
@@ -179,12 +185,12 @@ def main():
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    # --- HEADER ---
-    report_text = f"📈 *Analiza Portofoliu Tones* — {datetime.now().strftime('%d %b %Y')}\n"
+    # --- HEADER FĂRĂ "ANALIZA" ȘI FĂRĂ LINIUȚĂ LA DATĂ ---
+    report_text = f"📈 *Portofoliu Tones* {datetime.now().strftime('%d %b %Y')}\n"
     report_text += f"📊 *P&L Total:* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    # --- FORMAT NOU AJUSTAT ---
+    # --- FORMAT ULTRA-COMPACT FĂRĂ RÂNDURI GOLE ÎNTRE COMPANII ---
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
@@ -196,11 +202,13 @@ def main():
         ev_str = f"EV:{r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV:-"
         roic_val = r['roic'] * 100 if r['roic'] is not None else None
         roic_str = f"ROIC:{roic_val:.1f}%" if roic_val is not None else "ROIC:-"
+        fwd_pe_str = f"FwdPE:{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE:-"
+        tp_str = f"TP:${r['target_price']:.2f}" if r['target_price'] is not None else "TP:-"
 
         # Rândul 1: Symbol (%P&L) Pret — Signal
         report_text += f"▪️ *{r['symbol']}* ({p_sign}{p_pct:.1f}%) {price_str} — {r['signal']}\n"
-        # Rândul 2: Tot rândul într-un singur bloc de cod (font mai mic)
-        report_text += f"`{rsi_str} | {gap_str} | {ev_str} | {roic_str}`\n\n"
+        # Rândul 2: Indicatori compacti (Fără rând gol după ei)
+        report_text += f"`{rsi_str} | {gap_str} | {ev_str} | {roic_str} | {fwd_pe_str} | {tp_str}`\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
@@ -214,7 +222,7 @@ def main():
         }
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            print("Raportul super-compact a fost trimis pe Telegram!")
+            print("Raportul ultra-compact a fost trimis pe Telegram!")
         else:
             print(f"Erore: {response.text}")
 
