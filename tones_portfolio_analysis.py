@@ -1,5 +1,5 @@
 """
-Tones's Portfolio analysis: Ultra-compact format for Telegram reporting
+Tones's Portfolio analysis: Ultra-compact format for Telegram reporting with EV/EBITDA and ROIC
 """
 
 import os
@@ -105,25 +105,31 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
     gap_from_high = ((current_price - period_high) / period_high * 100) if (current_price and period_high) else None
 
     rsi = calculate_rsi(hist)
+    ev_ebitda = info.get("enterpriseToEbitda")
+    
+    # yfinance nu oferă întotdeauna direct ROIC sub această cheie exactă, încercăm să luăm returnOnCapital sau estimăm din profit
+    roic = info.get("returnOnCapital") or info.get("returnOnEquity")
 
     return {
         "current_price": current_price,
         "gap_from_high": gap_from_high,
         "rsi": rsi,
+        "ev_ebitda": ev_ebitda,
+        "roic": roic,
     }
 
 
 def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | None) -> tuple[str, str]:
     if rsi is not None and rsi < 35 and gain_pct < 0:
-        return "🟢 BUY", "Supravândut"
+        return "🟢 BUY"
     elif rsi is not None and rsi > 70 and gain_pct > 20:
-        return "🔴 TAKE PROFIT", "Supracumpărat"
+        return "🔴 TAKE PROFIT"
     elif gain_pct < -20:
-        return "🔴 CUT LOSS", "Scădere mare"
+        return "🔴 CUT LOSS"
     elif gap is not None and gap < -25:
-        return "🟢 STRONG BUY", "Discount din vârf"
+        return "🟢 STRONG BUY"
     else:
-        return "🟡 HOLD", "Neutru"
+        return "🟡 HOLD"
 
 
 def main():
@@ -147,7 +153,7 @@ def main():
         try:
             q = fetch_quote(symbol, period)
         except Exception as e:
-            q = {"current_price": None, "gap_from_high": None, "rsi": None}
+            q = {"current_price": None, "gap_from_high": None, "rsi": None, "ev_ebitda": None, "roic": None}
 
         cur = q["current_price"]
         cost_basis = purchase_price * quantity
@@ -158,7 +164,7 @@ def main():
         total_cost += cost_basis
         total_value += cur_value
 
-        signal, reason = generate_recommendation(gain_pct, q["rsi"], q["gap_from_high"])
+        signal = generate_recommendation(gain_pct, q["rsi"], q["gap_from_high"])
 
         rows.append({
             "symbol": symbol,
@@ -166,6 +172,8 @@ def main():
             "gain_pct": gain_pct,
             "rsi": q["rsi"],
             "gap": q["gap_from_high"],
+            "ev_ebitda": q["ev_ebitda"],
+            "roic": q["roic"],
             "signal": signal,
         })
 
@@ -173,9 +181,9 @@ def main():
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    # --- FORMAT FĂRĂ VALOARE TOTALĂ ÎN TITLU ---
-    report_text = f"📈 *TONES PORTFOLIO* — {datetime.now().strftime('%d %b %Y')}\n"
-    report_text += f"📊 *P&L Total:* `{sign}${total_gain:,.2f}` (`{sign}{total_gain_pct:.2f}%`)\n"
+    # --- FORMAT ACTUALIZAT: Portofoliu XTB, fără sumă în titlu, păstrat P&L în % ---
+    report_text = f"📈 *PORTOFOLIO XTB* — {datetime.now().strftime('%d %b %Y')}\n"
+    report_text += f"📊 *P&L Total:* `{sign}{total_gain_pct:.2f}%` (`{sign}${total_gain:,.2f}`)\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
     for r in rows:
@@ -184,8 +192,12 @@ def main():
         rsi_str = f"RSI:{r['rsi']:.0f}" if r['rsi'] is not None else "RSI:-"
         gap_str = f"Gap:{r['gap']:.0f}%" if r['gap'] is not None else "Gap:-"
         price_str = f"${r['cur_price']:.2f}" if r['cur_price'] is not None else "N/A"
+        
+        ev_str = f"EV:{r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV:-"
+        roic_val = r['roic'] * 100 if r['roic'] is not None else None
+        roic_str = f"ROIC:{roic_val:.1f}%" if roic_val is not None else "ROIC:-"
 
-        report_text += f"▪️ *{r['symbol']}* ({p_sign}{p_pct:.1f}%) | {price_str} | {rsi_str}, {gap_str} | {r['signal']}\n"
+        report_text += f"▪️ *{r['symbol']}* ({p_sign}{p_pct:.1f}%) | {price_str} | {rsi_str} | {gap_str} | {ev_str} | {roic_str} | {r['signal']}\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
