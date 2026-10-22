@@ -1,5 +1,5 @@
 """
-Tones's Portfolio analysis: Ultra-compact format for Telegram reporting with EV/EBITDA and ROIC
+Tones's Portfolio analysis: Clear 2-line format for Telegram reporting
 """
 
 import os
@@ -179,11 +179,12 @@ def main():
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    # --- TITLU ACTUALIZAT ---
+    # --- TITLU & HEADER ---
     report_text = f"📈 *Analiza Portofoliu Tones* — {datetime.now().strftime('%d %b %Y')}\n"
     report_text += f"📊 *P&L Total:* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
+    # --- REORGANIZARE NOUĂ PE 2 RÂNDURI ---
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
@@ -195,7 +196,10 @@ def main():
         roic_val = r['roic'] * 100 if r['roic'] is not None else None
         roic_str = f"ROIC:{roic_val:.1f}%" if roic_val is not None else "ROIC:-"
 
-        report_text += f"▪️ *{r['symbol']}* ({p_sign}{p_pct:.1f}%) | {price_str} | {rsi_str} | {gap_str} | {ev_str} | {roic_str} | {r['signal']}\n"
+        # Rândul 1: Companie % | Bulină Signal
+        report_text += f"▪️ *{r['symbol']}* ({p_sign}{p_pct:.1f}%) — {r['signal']}\n"
+        # Rândul 2: Preț | RSI | Gap | EV | ROIC
+        report_text += f"   └ `{price_str}` | `{rsi_str}` | `{gap_str}` | `{ev_str}` | `{roic_str}`\n\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
@@ -209,7 +213,7 @@ def main():
         }
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            print("Raportul compact a fost trimis pe Telegram!")
+            print("Raportul structurat pe 2 rânduri a fost trimis pe Telegram!")
         else:
             print(f"Erore: {response.text}")
 
