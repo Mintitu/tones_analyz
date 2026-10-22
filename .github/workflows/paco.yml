@@ -22,10 +22,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install yfinance requests pandas
+          pip install yfinance requests pandas tabulate
 
       - name: Run Python script
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python paco_portofolio_analysis.py
+        run: python paco_portfolio_analysis.py
