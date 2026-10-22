@@ -2,7 +2,7 @@ name: Tones Analysis
 
 on:
   schedule:
-    # Rulează în fiecare zi de luni până vineri la ora 21:00 (inainte de închiderea bursei SUA)
+    # Rulează în fiecare zi de luni până vineri la ora 19:00 (inainte de închiderea bursei SUA)
     - cron: '0 21 * * 1-5'
   workflow_dispatch: # Îți dă voie să apeși pe un buton să îl pornești și manual oricând vrei
 
