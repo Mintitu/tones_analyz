@@ -2,7 +2,6 @@ name: Tones Analysis
 
 on:
   schedule:
-    # Rulează în fiecare zi de luni până vineri la ora 19:00 (USA NYSE)
     - cron: '0 20 * * 1-5'
   workflow_dispatch: # Permite pornirea manuală sau prin API (Telegram)
 
@@ -27,9 +26,4 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python tones_portfolio_analysis.py
-
-      - name: Run Python script
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: python tones_portfolio_analysis.py
+        run: python tones_portfoliu_analysis.py
