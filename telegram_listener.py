@@ -32,7 +32,8 @@ def webhook():
             if res.status_code == 204:
                 send_telegram_message(chat_id, "✅ GitHub Actions a pornit cu succes!")
             else:
-                send_telegram_message(chat_id, f"❌ Eroare: {res.text}")
+                # Asta îți va spune exact motivul respingerii în mesajul pe Telegram
+                send_telegram_message(chat_id, f"❌ Eroare {res.status_code}: {res.text}")
                 
     return "OK", 200
 
