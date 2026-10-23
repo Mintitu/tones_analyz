@@ -18,22 +18,28 @@ def webhook():
         text = update["message"].get("text", "")
         
         if text == "/raport":
-            # Trimite mesaj pe Telegram că a pornit
             send_telegram_message(chat_id, "🔄 Am primit comanda! Pornesc raportul pe GitHub...")
             
-            # Declanșează GitHub Actions
             url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}/actions/workflows/tones.yml/dispatches"
             headers = {
                 "Authorization": f"Bearer {GH_PAT}",
                 "Accept": "application/vnd.github+json"
             }
-            res = requests.post(url, json={"ref": "main"}, headers=headers)
             
-            if res.status_code == 204:
-                send_telegram_message(chat_id, "✅ GitHub Actions a pornit cu succes!")
-            else:
-                # Asta îți va spune exact motivul respingerii în mesajul pe Telegram
-                send_telegram_message(chat_id, f"❌ Eroare {res.status_code}: {res.text}")
+            # Afișează în log-urile de pe Render pentru depanare
+            print(f"Verificare GH_PAT: {'EXISTA (lungime: ' + str(len(GH_PAT)) + ')' if GH_PAT else 'LIPSESTE COMPLET!'}")
+            
+            try:
+                res = requests.post(url, json={"ref": "main"}, headers=headers)
+                print(f"Raspuns GitHub API -> Status: {res.status_code} | Text: {res.text}")
+                
+                if res.status_code == 204:
+                    send_telegram_message(chat_id, "✅ GitHub Actions a pornit cu succes!")
+                else:
+                    send_telegram_message(chat_id, f"❌ Eroare GitHub {res.status_code}: {res.text}")
+            except Exception as e:
+                print(f"Eroare de conexiune: {e}")
+                send_telegram_message(chat_id, f"❌ Eroare de sistem: {e}")
                 
     return "OK", 200
 
