@@ -2,9 +2,9 @@ name: Tones Analysis
 
 on:
   schedule:
-    # Rulează în fiecare zi de luni până vineri la ora 19:00 (inainte de închiderea bursei SUA)
-    - cron: '0 21 * * 1-5'
-  workflow_dispatch: # Îți dă voie să apeși pe un buton să îl pornești și manual oricând vrei
+    # Rulează în fiecare zi de luni până vineri la ora 19:00 (USA NYSE)
+    - cron: '0 20 * * 1-5'
+  workflow_dispatch: # Permite pornirea manuală sau prin API (Telegram)
 
 jobs:
   run-stock-bot:
