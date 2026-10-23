@@ -1,5 +1,5 @@
 """
-Analiza Portofoliu Tones pe XTB
+Portofoliu Tones pe XTB
 """
 
 import os
@@ -198,19 +198,19 @@ def main():
         p_sign = "+" if p_pct >= 0 else ""
         
         price_str = f"{r['cur_price']:.2f}$" if r['cur_price'] is not None else "N/A"
-        tp_str = f"TP {r['target_price']:.2f}$" if r['target_price'] is not None else "TP -"
+        tp_str = f"TP{r['target_price']:.2f}$" if r['target_price'] is not None else "TP-"
         
-        rsi_str = f"RSI {r['rsi']:.0f}" if r['rsi'] is not None else "RSI -"
-        gap_str = f"Gap {r['gap']:.0f}%" if r['gap'] is not None else "Gap -"
-        ev_str = f"EV {r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV -"
+        rsi_str = f"RSI{r['rsi']:.0f}" if r['rsi'] is not None else "RSI-"
+        gap_str = f"Gap{r['gap']:.0f}%" if r['gap'] is not None else "Gap-"
+        ev_str = f"EV{r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV-"
         roic_val = r['roic'] * 100 if r['roic'] is not None else None
-        roic_str = f"ROIC {roic_val:.1f}%" if roic_val is not None else "ROIC -"
-        fwd_pe_str = f"FwdPE {r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE -"
+        roic_str = f"ROIC{roic_val:.1f}%" if roic_val is not None else "ROIC-"
+        fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
 
-        # Rândul 1: Bulină Symbol +P&L% Preț Motivare (TP mutat pe rândul 2 în fața RSI)
+        # Rândul 1: Bulină Symbol +P&L% Preț (Motivare)
         report_text += f"{r['bullet']} *{r['symbol']}* {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})\n"
-        # Rândul 2: TP mutat primul, urmat de indicatori cu separatorul / fără spații
-        report_text += f"`{tp_str}/{rsi_str}/{gap_str}/{ev_str}/{roic_str}/{fwd_pe_str}`\n"
+        # Rândul 2: Fără spații după etichetă și cu spațiu simplu ca separator
+        report_text += f"`{tp_str} {rsi_str} {gap_str} {ev_str} {roic_str} {fwd_pe_str}`\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
