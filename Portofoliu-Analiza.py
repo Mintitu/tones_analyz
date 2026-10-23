@@ -195,7 +195,7 @@ def main():
     report_text += f"📊 *Analiza P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    # --- FORMAT EXACT PE 2 RÂNDURI PER STOC + LINIE SEPARATOARE ---
+    # --- FORMAT EXACT PE 2 RÂNDURI PER STOC (FĂRĂ LINIE SUPLIMENTARĂ) ---
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
@@ -213,12 +213,10 @@ def main():
         pe_str = f"PE{pe_val:.1f}" if pe_val is not None else "PE-"
         fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
 
-        # Rândul 1: Bulină Symbol +P&L% Preț (Motivare)
-        report_text += f"{r['bullet']} *{r['symbol']}* {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})\n"
-        # Rândul 2: Indicatori tehnici pe font mic
+        # Rândul 1: Îngroșat (Bold) complet pentru claritate maximă
+        report_text += f"*{r['bullet']} {r['symbol']} {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})*\n"
+        # Rândul 2: Indicatori tehnici pe font mic (monospace)
         report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
-        # Linie de separare subțire discretă
-        report_text += f"───────────────────────────\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
