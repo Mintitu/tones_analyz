@@ -107,6 +107,7 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
     rsi = calculate_rsi(hist)
     ev_ebitda = info.get("enterpriseToEbitda")
     roic = info.get("returnOnCapital") or info.get("returnOnEquity")
+    trailing_pe = info.get("trailingPE")
     forward_pe = info.get("forwardPE")
     target_price = info.get("targetMeanPrice")
 
@@ -116,6 +117,7 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
         "rsi": rsi,
         "ev_ebitda": ev_ebitda,
         "roic": roic,
+        "trailing_pe": trailing_pe,
         "forward_pe": forward_pe,
         "target_price": target_price,
     }
@@ -155,7 +157,7 @@ def main():
         try:
             q = fetch_quote(symbol, period)
         except Exception as e:
-            q = {"current_price": None, "gap_from_high": None, "rsi": None, "ev_ebitda": None, "roic": None, "forward_pe": None, "target_price": None}
+            q = {"current_price": None, "gap_from_high": None, "rsi": None, "ev_ebitda": None, "roic": None, "trailing_pe": None, "forward_pe": None, "target_price": None}
 
         cur = q["current_price"]
         cost_basis = purchase_price * quantity
@@ -176,6 +178,7 @@ def main():
             "gap": q["gap_from_high"],
             "ev_ebitda": q["ev_ebitda"],
             "roic": q["roic"],
+            "trailing_pe": q["trailing_pe"],
             "forward_pe": q["forward_pe"],
             "target_price": q["target_price"],
             "bullet": bullet,
@@ -198,19 +201,22 @@ def main():
         p_sign = "+" if p_pct >= 0 else ""
         
         price_str = f"{r['cur_price']:.2f}$" if r['cur_price'] is not None else "N/A"
-        tp_str = f"TP{r['target_price']:.2f}$" if r['target_price'] is not None else "TP-"
+        tp_str = f"TP{r['target_price']:.1f}$" if r['target_price'] is not None else "TP-"
         
-        rsi_str = f"RSI{r['rsi']:.0f}" if r['rsi'] is not None else "RSI-"
         gap_str = f"Gap{r['gap']:.0f}%" if r['gap'] is not None else "Gap-"
         ev_str = f"EV{r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV-"
         roic_val = r['roic'] * 100 if r['roic'] is not None else None
         roic_str = f"ROIC{roic_val:.1f}%" if roic_val is not None else "ROIC-"
+        
+        rsi_str = f"RSI{r['rsi']:.0f}" if r['rsi'] is not None else "RSI-"
+        pe_val = r['trailing_pe']
+        pe_str = f"PE{pe_val:.1f}" if pe_val is not None else "PE-"
         fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
 
         # Rândul 1: Bulină Symbol +P&L% Preț (Motivare)
         report_text += f"{r['bullet']} *{r['symbol']}* {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})\n"
-        # Rândul 2: Fără spații după etichetă și cu spațiu simplu ca separator
-        report_text += f"`{tp_str} {rsi_str} {gap_str} {ev_str} {roic_str} {fwd_pe_str}`\n"
+        # Rândul 2: TP primul, urmat de indicatori, RSI în fața PE, PE înainte de FwdPE
+        report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
