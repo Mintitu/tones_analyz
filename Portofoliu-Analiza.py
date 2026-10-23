@@ -195,7 +195,7 @@ def main():
     report_text += f"📊 *Analiza P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    # --- FORMAT EXACT PE 2 RÂNDURI PER STOC ---
+    # --- FORMAT EXACT PE 2 RÂNDURI PER STOC + LINIE SEPARATOARE ---
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
@@ -215,8 +215,10 @@ def main():
 
         # Rândul 1: Bulină Symbol +P&L% Preț (Motivare)
         report_text += f"{r['bullet']} *{r['symbol']}* {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})\n"
-        # Rândul 2: TP primul, urmat de indicatori, RSI în fața PE, PE înainte de FwdPE
+        # Rândul 2: Indicatori tehnici pe font mic
         report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
+        # Linie de separare subțire discretă
+        report_text += f"───────────────────────────\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
