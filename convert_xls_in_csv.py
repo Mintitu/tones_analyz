@@ -2,10 +2,10 @@ import pandas as pd
 import glob
 import os
 
-def convert_excel_to_paco_csv(excel_file_path, output_csv_path="paco_portfolio.csv"):
+def convert_excel_to_csv(excel_file_path, output_csv_path="portfoliu_xtb.csv"):
     """
     Converteste extrasul Excel al brokerului (Cash Operations + Closed Positions)
-    in formatul standard CSV 'paco_portfolio' pentru analiza pe GitHub.
+    in formatul standard CSV 'portfoliu' pentru analiza pe GitHub.
     """
     print(f"Se proceseaza fisierul: {excel_file_path}")
     
@@ -122,6 +122,6 @@ if __name__ == "__main__":
     # Cauta automat ultimul fisier Excel din folderul curent
     excel_files = glob.glob("USD_*.xlsx")
     if excel_files:
-        convert_excel_to_paco_csv(excel_files[0], "paco_portfolio_updated.csv")
+        convert_excel_to_csv(excel_files[0], "portfoliu_xtb.csv")
     else:
         print("Nu s-a gasit niciun fisier Excel de la broker in folder.")
