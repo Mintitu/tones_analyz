@@ -191,8 +191,8 @@ def main():
 
     # --- HEADER ---
     current_time = datetime.now().strftime('%d%b%Y %H:%M')
-    report_text = f"📈 *Portofoliu Tones* – `{current_time}`\n"
-    report_text += f"📊 *P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
+    report_text = f"📈 *Portofoliu XTB* – `{current_time}`\n"
+    report_text += f"📊 *Analiza P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
     # --- FORMAT EXACT PE 2 RÂNDURI PER STOC ---
