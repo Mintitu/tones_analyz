@@ -187,9 +187,10 @@ def main():
     sign = "+" if total_gain >= 0 else ""
 
     # --- HEADER ---
-    report_text = f"📈 *Portofoliu Tones* {datetime.now().strftime('%d %b %Y')}\n"
-    report_text += f"📊 *P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
-    report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        current_time = datetime.now().strftime('%H:%M, %d %b %Y')
+        report_text = f"📈 *Portofoliu Tones* – `{current_time}`\n"
+        report_text += f"📊 *P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
+        report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
     # --- FORMAT EXACT PE 2 RÂNDURI PER STOC ---
     for r in rows:
