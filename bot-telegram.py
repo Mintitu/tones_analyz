@@ -4,12 +4,12 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 # Datele tale GitHub
-GITHUB_USER = "UTILIZATORUL_TAU"
-REPO_NAME = "NUME_REPO"
+GITHUB_USER = "Mintitu"
+REPO_NAME = "tones_potofolio_analysis"
 GH_PAT = os.environ.get("GH_PAT") # Tokenul generat la Pasul 1
 
 async def trigger_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🔄 Am pornit generarea raportului pe GitHub. Revin imediat cu datele!")
+    await update.message.reply_text("🔄 Pornesc generarea raportului pe GitHub,. imediat vin si datele!")
 
     # API-ul GitHub pentru a declanșa workflow-ul (workflow_dispatch)
     url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}/actions/workflows/main.yml/dispatches"
