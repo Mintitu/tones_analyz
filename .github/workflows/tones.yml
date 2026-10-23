@@ -28,3 +28,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python tones_portfolio_analysis.py
+
+      - name: Run Python script
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: python tones_portfolio_analysis.py
