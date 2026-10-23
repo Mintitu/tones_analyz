@@ -1,5 +1,5 @@
 """
-Tones's Portfolio analysis: Ultra-compact 2-line layout with TP and Reason on Line 1
+Portofoliu Tones pe XTB
 """
 
 import os
