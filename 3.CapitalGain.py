@@ -20,12 +20,9 @@ def process_capital_gain():
     df_close.columns = df_close_raw.iloc[0].values
     
     df_close['Profit/Loss'] = pd.to_numeric(df_close['Profit/Loss'], errors='coerce')
-    
-    # Căutăm dinamic sau folosim direct coloana standard 'Close Time (UTC)'
     time_col = 'Close Time (UTC)' if 'Close Time (UTC)' in df_close.columns else 'Close Time'
     df_close['Close Time'] = pd.to_datetime(df_close[time_col], errors='coerce')
 
-    # Filtrăm doar pozițiile închise valide cu Ticker și Profit/Loss
     closed_valid = df_close[df_close['Ticker'].notna() & df_close['Profit/Loss'].notna()].copy()
     closed_valid['Month'] = closed_valid['Close Time'].dt.to_period('M').astype(str)
 
@@ -37,7 +34,13 @@ def process_capital_gain():
     df_open['Net Profit'] = pd.to_numeric(df_open['Net Profit'], errors='coerce')
     cg_open = df_open[df_open['Ticker'].notna()].copy()
 
-    # 3. Creare Tabel Matrice (Companii vs Luni) pentru Capital Gain Realizat
+    total_realized = closed_valid['Profit/Loss'].sum()
+    total_unrealized = cg_open['Net Profit'].sum()
+    total_cg = total_realized + total_unrealized
+
+    # ==========================================
+    # 3. GENERARE RAPORT GITHUB (Tabel Markdown)
+    # ==========================================
     pivot_table = closed_valid.pivot_table(
         index='Ticker', 
         columns='Month', 
@@ -46,19 +49,12 @@ def process_capital_gain():
         fill_value=0
     )
 
-    # Adăugăm total pe companie și sortăm companiile descrescător după profitul realizat
     pivot_table['Total'] = pivot_table.sum(axis=1)
     pivot_table = pivot_table.sort_values(by='Total', ascending=False)
     pivot_table = pivot_table.drop(columns=['Total'])
 
-    # Lunile sortate cronologic
     months = sorted(pivot_table.columns)
     pivot_table = pivot_table[months]
-
-    # Structurare raport Markdown
-    total_realized = closed_valid['Profit/Loss'].sum()
-    total_unrealized = cg_open['Net Profit'].sum()
-    total_cg = total_realized + total_unrealized
 
     md_content = f"""📈 **Raport Capital Gain (Câștiguri din Capital)**
 
@@ -90,11 +86,31 @@ def process_capital_gain():
         row_str = f"| **{ticker}** | " + " | ".join(row_cells) + f" | **{total_str}** |"
         md_content += row_str + "\n"
 
-    # Salvare fișier
     with open("CapitalGain.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    print("Fișierul 'CapitalGain.md' a fost creat cu succes.")
+    # ==========================================
+    # 4. GENERARE RAPORT TELEGRAM (Optimizat Mobil)
+    # ==========================================
+    tg_content = f"""📈 *Raport Capital Gain*
+
+📊 *Summary General*
+• *Realizat:* `${total_realized:,.2f}`
+• *Nerealizat:* `${total_unrealized:,.2f}`
+• *Total:* `${total_cg:,.2f}`
+
+━━━━━━━━━━━━━━━━━━━━━━
+💼 *Top Companii (Realizat Total):*
+"""
+    ticker_totals = closed_valid.groupby('Ticker')['Profit/Loss'].sum().sort_values(ascending=False)
+    for ticker, tot in ticker_totals.items():
+        sign_str = "+" if tot >= 0 else ""
+        tg_content += f"• *{ticker}*: `{sign_str}${tot:,.2f}`\n"
+
+    with open("TelegramReport.txt", "w", encoding="utf-8") as f:
+        f.write(tg_content)
+
+    print("Fișierele 'CapitalGain.md' și 'TelegramReport.txt' au fost generate cu succes.")
 
 if __name__ == "__main__":
     process_capital_gain()
