@@ -30,96 +30,56 @@ def convert_excel_to_csv(excel_file_path, output_csv_path="portfoliu_xtb.csv"):
         
         instrument = str(row['Instrument']) if pd.notna(row['Instrument']) else ''
         ticker_raw = str(row['Ticker']) if pd.notna(row['Ticker']) else ''
-        # Curatam sufixul .US sau .UK din ticker daca este cazul
         ticker = ticker_raw.replace('.US', '') if ticker_raw != 'nan' else ''
         
         amount = abs(float(row['Amount'])) if pd.notna(row['Amount']) else 0.0
         comment = str(row['Comment']) if pd.notna(row['Comment']) else ''
         
-        # Extragem numarul de actiuni din comentariu daca este disponibil (ex: OPEN BUY APLE 300 @ 11.71)
         shares = 0.0
         if 'BUY' in comment or 'SELL' in comment:
             parts = comment.split()
             for idx, p in enumerate(parts):
                 if p in ['BUY', 'SELL'] and idx + 2 < len(parts):
                     try:
-                        # Daca numarul de actiuni este format ca "300/4000", luam prima parte
                         sh_str = parts[idx + 2].split('/')[0]
                         shares = float(sh_str)
                     except ValueError:
                         shares = 0.0
         
-        # --- 1. Tranzactii de Cumparare (Buy) ---
         if op_type == 'Stock purchase':
             formatted_rows.append({
-                'Date': date_str,
-                'Type': 'Buy',
-                'Security Name': instrument,
-                'Ticker': ticker,
-                'Shares': shares,
-                'Value': round(amount, 2),
-                'Fees': 0,
-                'Taxes': 0,
-                'Currency': 'USD',
-                'Note': comment
+                'Date': date_str, 'Type': 'Buy', 'Security Name': instrument,
+                'Ticker': ticker, 'Shares': shares, 'Value': round(amount, 2),
+                'Fees': 0, 'Taxes': 0, 'Currency': 'USD', 'Note': comment
             })
-            
-        # --- 2. Tranzactii de Vanzare (Sell) ---
         elif op_type == 'Stock sell':
             formatted_rows.append({
-                'Date': date_str,
-                'Type': 'Sell',
-                'Security Name': instrument,
-                'Ticker': ticker,
-                'Shares': shares,
-                'Value': round(amount, 2),
-                'Fees': 0,
-                'Taxes': 0,
-                'Currency': 'USD',
-                'Note': comment
+                'Date': date_str, 'Type': 'Sell', 'Security Name': instrument,
+                'Ticker': ticker, 'Shares': shares, 'Value': round(amount, 2),
+                'Fees': 0, 'Taxes': 0, 'Currency': 'USD', 'Note': comment
             })
-            
-        # --- 3. Dividende Primite (Dividend) ---
         elif op_type == 'Dividend':
             formatted_rows.append({
-                'Date': date_str,
-                'Type': 'Dividend',
-                'Security Name': instrument,
-                'Ticker': ticker,
-                'Shares': 0.0,
-                'Value': round(amount, 2),
-                'Fees': 0,
-                'Taxes': 0,
-                'Currency': 'USD',
-                'Note': comment
+                'Date': date_str, 'Type': 'Dividend', 'Security Name': instrument,
+                'Ticker': ticker, 'Shares': 0.0, 'Value': round(amount, 2),
+                'Fees': 0, 'Taxes': 0, 'Currency': 'USD', 'Note': comment
             })
-            
-        # --- 4. Impozit pe Dividende (Withholding tax / RO tax) ---
         elif op_type in ['Withholding tax', 'RO tax']:
             formatted_rows.append({
-                'Date': date_str,
-                'Type': 'Tax',
-                'Security Name': instrument,
-                'Ticker': ticker,
-                'Shares': 0.0,
-                'Value': 0.0,
-                'Fees': 0,
-                'Taxes': round(amount, 2),
-                'Currency': 'USD',
+                'Date': date_str, 'Type': 'Tax', 'Security Name': instrument,
+                'Ticker': ticker, 'Shares': 0.0, 'Value': 0.0,
+                'Fees': 0, 'Taxes': round(amount, 2), 'Currency': 'USD',
                 'Note': f"{op_type}: {comment}"
             })
 
-    # Cream DataFrame-ul final si sortam cronologic
     df_final = pd.DataFrame(formatted_rows)
     df_final['Date_dt'] = pd.to_datetime(df_final['Date'])
     df_final = df_final.sort_values(by='Date_dt').drop(columns=['Date_dt'])
     
-    # Salvam in fisierul CSV dorit
     df_final.to_csv(output_csv_path, index=False)
     print(f"Export finalizat cu succes: '{output_csv_path}' ({len(df_final)} randuri procesate).")
 
 if __name__ == "__main__":
-    # Cauta automat ultimul fisier Excel din folderul curent
     excel_files = glob.glob("USD_*.xlsx")
     if excel_files:
         convert_excel_to_csv(excel_files[0], "portfoliu_xtb.csv")
