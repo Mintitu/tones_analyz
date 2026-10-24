@@ -16,7 +16,7 @@ import requests
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-CSV_FILE = Path(__file__).parent / "portfoliu_xtb.csv"
+CSV_FILE = Path(__file__).parent / "portfoliu-xtb.csv"
 
 PERIOD_LABELS = {
     "1mo": "1 Month", "3mo": "3 Months", "6mo": "6 Months",
