@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - '*.xlsx'
-      - 'dividende-pnl.py'
+      - '2.Capital-Dividende.py'
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.14'
 
       - name: Install dependencies
         run: |
@@ -27,7 +27,7 @@ jobs:
 
       - name: Run portfolio update script
         run: |
-          python dividende-pnl.py
+          python 2.Capital-Dividende.py
 
       - name: Send Report to Telegram
         env:
@@ -35,7 +35,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           # Citim fisierul generat si il trimitem pe Telegram prin API
-          REPORT_TEXT=$(cat portfolio_report.md)
+          REPORT_TEXT=$(cat Capital-Dividende.md)
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
             -d "text=${REPORT_TEXT}" \
@@ -45,7 +45,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add portfolio_report.md
+          git add Capital-Dividende.md
           git status
           git diff-index --quiet HEAD || git commit -m "auto: update portfolio report"
           git push
