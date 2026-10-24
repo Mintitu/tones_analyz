@@ -82,10 +82,10 @@ def process_portfolio():
         md_content += row_str + "\n"
 
     # Salvare fisier local
-    with open("Capital-Dividende.md", "w", encoding="utf-8") as f:
+    with open("Dividende.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    print("Fișierul 'Capital-Dividende.md' a fost creat cu succes sub formă de tabel matrice.")
+    print("Fișierul 'Dividende.md' a fost creat cu succes sub formă de tabel matrice.")
 
 if __name__ == "__main__":
     process_portfolio()
