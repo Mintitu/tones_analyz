@@ -1,4 +1,4 @@
-"""
+updated_code = '''"""
 Portofoliu Tones pe XTB
 """
 
@@ -16,7 +16,7 @@ import requests
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-CSV_FILE = Path(__file__).parent / "portfoliu-xtb.csv"
+CSV_FILE = Path(__file__).parent / "portofoliu-xtb.csv"
 
 PERIOD_LABELS = {
     "1mo": "1 Month", "3mo": "3 Months", "6mo": "6 Months",
@@ -117,34 +117,68 @@ def calculate_score_and_signal(
     roic: float | None, 
     forward_pe: float | None
 ) -> tuple[str, int, str]:
-    # Pornim de la un scor de bază echilibrat
-    score = 60
+    score = 50
 
     if gain_pct > 0:
-        score += min(30, int(gain_pct / 2))
+        score += min(25, int(gain_pct / 1.5))
     else:
-        score -= min(30, int(abs(gain_pct) / 2))
+        score -= min(25, int(abs(gain_pct) / 1.5))
 
     if rsi is not None:
-        if 35 <= rsi <= 65:
-            score += 10
-        elif rsi < 30:
-            score += 15 # Oportunitate de supravânzare
+        if rsi < 35:
+            score += 20
+        elif rsi > 70:
+            score -= 20
+
+    if gap is not None and gap < -20:
+        score += 15
 
     score = max(0, min(99, score))
 
-    # Logică flexibilă și corectă pentru culori
-    if gain_pct >= 0 and (rsi is None or rsi <= 72):
-        reason = "Profit / Creștere" if gain_pct > 5 else "Stabil"
-        return "🟢", score, reason
+    bullet = "⚠️"
+    reason = "Neutru"
+
+    if rsi is not None and rsi < 25 and gain_pct < 0:
+        bullet = "🟢"
+        reason = "Supravândut Mare"
+    elif rsi is not None and rsi < 35 and gain_pct < 0:
+        bullet = "🟢"
+        reason = "Supravândut Mediu"
+    elif gap is not None and gap < -35 and (rsi is None or rsi < 45):
+        bullet = "🟢"
+        reason = "Discount Mare"
+    elif gap is not None and gap < -20 and (rsi is None or rsi < 50):
+        bullet = "🟢"
+        reason = "Discount Mediu"
+    elif gain_pct >= 25 and (rsi is None or rsi <= 75):
+        bullet = "🟢"
+        reason = "Profit Mare"
+    elif gain_pct >= 10 and gain_pct < 25 and (rsi is None or rsi <= 70):
+        bullet = "🟢"
+        reason = "Profit Solid"
+    elif gain_pct >= 0 and gain_pct < 10 and (rsi is None or rsi <= 65):
+        bullet = "🟢"
+        reason = "Stabil / Mic"
+    elif gain_pct < 0 and gain_pct >= -8 and (rsi is None or rsi >= 35):
+        bullet = "🟧"
+        reason = "Corecție Mică"
+    elif gain_pct < -8 and gain_pct >= -20:
+        bullet = "🟧"
+        reason = "Corecție Medie"
+    elif gain_pct < -20 and gain_pct >= -35:
+        bullet = "🔴"
+        reason = "Scădere Mare"
+    elif gain_pct < -35:
+        bullet = "🔴"
+        reason = "Scădere Critică"
+    elif rsi is not None and rsi > 78:
+        bullet = "🔴"
+        reason = "Supracumpărat Mare"
     elif rsi is not None and rsi > 70:
-        return "🔴", score, "Supracumpărat"
-    elif gain_pct < -20:
-        return "🔴", score, "Scădere mare"
-    elif gain_pct < -5:
-        return "🟧", score, "Corecție"
-    else:
-        return "⚠️", score, "Neutru"
+        bullet = "🟧"
+        reason = "Supracumpărat Mediu"
+
+    return bullet, score, reason
 
 def main():
     args = parse_args()
@@ -216,7 +250,9 @@ def main():
         pe_str = f"PE{pe_val:.1f}" if pe_val is not None else "PE-"
         fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
 
-        report_text += f"*{r['bullet']}{r['score']} {r['symbol']} {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})*\n"
+        # Rândul 1: După companie pune prețul, apoi creșterea/scăderea în %: Symbol -> Price -> Gain%
+        report_text += f"*{r['bullet']}{r['score']} {r['symbol']} {price_str} {p_sign}{p_pct:.1f}% ({r['reason']})*\n"
+        # Rândul 2: Monospace cu indicatorii
         report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -233,3 +269,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+'''
+
+with open("portofoliu-analiza.py", "w", encoding="utf-8") as f:
+    f.write(updated_code)
+
+print("Successfully updated portofoliu-analiza.py with the new logic and formatting!")
