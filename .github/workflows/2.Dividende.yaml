@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Compilez raportu de dividende:
+  Compilez:
     runs-on: ubuntu-latest
 
     steps:
