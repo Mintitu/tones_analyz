@@ -2,7 +2,7 @@ import pandas as pd
 import glob
 import os
 
-def convert_excel_to_csv(output_csv_path="portfoliu_xtb.csv"):
+def convert_excel_to_csv(output_csv_path="portfoliu-xtb.csv"):
     """
     Citește toate fișierele Excel XTB disponibile (Open, Close, Cash) 
     și unifică datele pentru a păstra atât portofoliul activ, cât și istoricul complet.
@@ -80,4 +80,4 @@ def convert_excel_to_csv(output_csv_path="portfoliu_xtb.csv"):
         print("Atenție: Nu s-au găsit poziții active de salvat pentru analiză.")
 
 if __name__ == "__main__":
-    convert_excel_to_csv("portfoliu_xtb.csv")
+    convert_excel_to_csv("portfoliu-xtb.csv")
