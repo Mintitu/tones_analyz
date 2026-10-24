@@ -131,13 +131,13 @@ def calculate_score_and_signal(
         elif rsi < 30:
             score += 15 # Oportunitate de supravânzare
 
-    score = max(0, min(100, score))
+    score = max(0, min(99, score))
 
     # Logică flexibilă și corectă pentru culori
     if gain_pct >= 0 and (rsi is None or rsi <= 72):
         reason = "Profit / Creștere" if gain_pct > 5 else "Stabil"
         return "🟢", score, reason
-    elif rsi is not None and rsi > 75:
+    elif rsi is not None and rsi > 70:
         return "🔴", score, "Supracumpărat"
     elif gain_pct < -20:
         return "🔴", score, "Scădere mare"
