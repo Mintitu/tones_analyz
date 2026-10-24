@@ -19,23 +19,10 @@ def process_capital_gain():
     df_close = df_close_raw.iloc[1:].copy()
     df_close.columns = df_close_raw.iloc[0].values
     
-    # Debug: afișăm coloanele disponibile în fișierul Close
-    print("Coloane disponibile în Close:", list(df_close.columns))
-
     df_close['Profit/Loss'] = pd.to_numeric(df_close['Profit/Loss'], errors='coerce')
     
-    # Căutăm dinamic coloana de timp (Close Time, Time, etc.)
-    time_col = None
-    for col in df_close.columns:
-        if col and ('time' in str(col).lower() or 'data' in str(col).lower()):
-            time_col = col
-            break
-    
-    if not time_col:
-        # Fallback pe prima coloană sau 'Time' dacă există
-        time_col = 'Close Time' if 'Close Time' in df_close.columns else df_close.columns[0]
-
-    print(using f"Folosim coloana de timp pentru Close: '{time_col}'")
+    # Căutăm dinamic sau folosim direct coloana standard 'Close Time (UTC)'
+    time_col = 'Close Time (UTC)' if 'Close Time (UTC)' in df_close.columns else 'Close Time'
     df_close['Close Time'] = pd.to_datetime(df_close[time_col], errors='coerce')
 
     # Filtrăm doar pozițiile închise valide cu Ticker și Profit/Loss
@@ -48,7 +35,7 @@ def process_capital_gain():
     df_open.columns = df_open_raw.iloc[0].values
     
     df_open['Net Profit'] = pd.to_numeric(df_open['Net Profit'], errors='coerce')
-    cg_open = df_open[df_open['Type'].isna() & df_open['Ticker'].notna()].copy()
+    cg_open = df_open[df_open['Ticker'].notna()].copy()
 
     # 3. Creare Tabel Matrice (Companii vs Luni) pentru Capital Gain Realizat
     pivot_table = closed_valid.pivot_table(
