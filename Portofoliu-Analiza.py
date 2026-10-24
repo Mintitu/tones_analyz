@@ -110,17 +110,66 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
         "forward_pe": forward_pe, "target_price": target_price,
     }
 
-def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | None) -> tuple[str, str]:
+def calculate_score_and_signal(
+    gain_pct: float, 
+    rsi: float | None, 
+    gap: float | None, 
+    roic: float | None, 
+    forward_pe: float | None
+) -> tuple[str, int, str]:
+    score = 50
+
+    if rsi is not None:
+        if rsi < 30:
+            score += 25
+        elif rsi < 40:
+            score += 15
+        elif rsi > 70:
+            score -= 25
+        elif rsi > 60:
+            score -= 10
+
+    if gap is not None:
+        if gap < -30:
+            score += 20
+        elif gap < -15:
+            score += 10
+        elif gap > -2:
+            score -= 10
+
+    if roic is not None:
+        roic_pct = roic * 100 if roic < 1 else roic
+        if roic_pct > 15:
+            score += 15
+        elif roic_pct > 8:
+            score += 5
+        elif roic_pct < 0:
+            score -= 15
+
+    if forward_pe is not None:
+        if 0 < forward_pe < 12:
+            score += 10
+        elif forward_pe > 30:
+            score -= 10
+
+    score = max(0, min(100, score))
+
     if rsi is not None and rsi < 35 and gain_pct < 0:
-        return "🟢", "Supravândut"
+        return "🟢", score, "Supravândut"
+    elif gain_pct < -15 and roic is not None and (roic * 100 if roic < 1 else roic) > 12:
+        return "🟢", score, "Discount Fundamental"
     elif rsi is not None and rsi > 70 and gain_pct > 20:
-        return "🔴", "Supracumpărat"
-    elif gain_pct < -20:
-        return "🔴", "Scădere mare"
+        return "🔴", score, "Supracumpărat"
+    elif gain_pct < -25:
+        return "🔴", score, "Scădere Mare"
     elif gap is not None and gap < -25:
-        return "🟢", "Discount vârf"
+        return "🟢", score, "Discount vârf"
+    elif score >= 70:
+        return "🟢", score, "Scor Excelent"
+    elif score <= 35:
+        return "🔴", score, "Scor Slab"
     else:
-        return "🟡", "Neutru"
+        return "⚠️", score, "Neutru"
 
 def main():
     args = parse_args()
@@ -154,21 +203,22 @@ def main():
         total_cost += cost_basis
         total_value += cur_value
 
-        bullet, reason = generate_recommendation(gain_pct, q["rsi"], q["gap_from_high"])
+        bullet, score, reason = calculate_score_and_signal(
+            gain_pct, q["rsi"], q["gap_from_high"], q["roic"], q["forward_pe"]
+        )
 
         rows.append({
             "symbol": symbol, "cur_price": cur, "gain_pct": gain_pct,
             "rsi": q["rsi"], "gap": q["gap_from_high"], "ev_ebitda": q["ev_ebitda"],
             "roic": q["roic"], "trailing_pe": q["trailing_pe"],
             "forward_pe": q["forward_pe"], "target_price": q["target_price"],
-            "bullet": bullet, "reason": reason,
+            "bullet": bullet, "score": score, "reason": reason,
         })
 
     total_gain = total_value - total_cost
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    # --- HEADER (Data lipita: %d%b%Y %H:%M) ---
     current_time = datetime.now().strftime('%d%b%Y %H:%M')
     report_text = f"📈 *Portofoliu XTB* – `{current_time}`\n"
     report_text += f"📊 *Analiza P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
@@ -191,8 +241,8 @@ def main():
         pe_str = f"PE{pe_val:.1f}" if pe_val is not None else "PE-"
         fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
 
-        # Rândul 1: Îngroșat
-        report_text += f"*{r['bullet']} {r['symbol']} {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})*\n"
+        # Rândul 1: Bulină + Scor lipit direct + Simbol + P&L% + Preț + (Motiv)
+        report_text += f"*{r['bullet']}{r['score']} {r['symbol']} {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})*\n"
         # Rândul 2: Monospace cu indicatorii
         report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
 
@@ -204,7 +254,7 @@ def main():
         payload = {"chat_id": chat_id, "text": report_text, "parse_mode": "Markdown"}
         response = requests.post(url, json=payload)
         if response.status_code == 200:
-            print("Raportul super-compact a fost trimis pe Telegram!")
+            print("Raportul a fost trimis pe Telegram cu succes!")
         else:
             print(f"Erore: {response.text}")
 
