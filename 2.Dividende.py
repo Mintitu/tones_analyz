@@ -52,7 +52,7 @@ def process_portfolio():
     pivot_table = pivot_table[months]
 
     # --- Versiunea Markdown (pentru GitHub) ---
-    md_content = f"""📈 **Raport Portofoliu & Dividende**
+    md_content = f"""📈 **Dividende aferente anului 2026**
 
 📊 **Summary General**
 • **Total Dividende Brute:** `${divs_only['Amount'].sum():,.2f}`
@@ -75,8 +75,8 @@ def process_portfolio():
     with open("Dividende.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    # --- Versiunea Text Simplu (pentru Telegram - fără formatare complexă care dă eroare) ---
-    txt_content = f"""RAPORT PORTOFOLIU & DIVIDENDE
+    # --- Versiunea Text Simplu (pentru Telegram) ---
+    txt_content = f"""Dividende aferente anului 2026
 
 SUMMARY GENERAL:
 - Total Dividende Brute: ${divs_only['Amount'].sum():,.2f}
@@ -92,7 +92,7 @@ INCASARI PE LUNI SI COMPANII:
         months_str = ", ".join([f"{m}: ${v:,.1f}" for m, v in zip(months, row) if v > 0])
         txt_content += f"- {ticker} (Total: ${row_total:,.1f}) -> [{months_str}]\n"
 
-    with open("DividendeTG.txt", "w", encoding="utf-8") as f:
+    with open("DividendeTG.txt", "w", encoding="utf-8`", errors="ignore") as f:
         f.write(txt_content)
 
     print("Fisierele 'Dividende.md' si 'DividendeTG.txt' au fost create cu succes.")
