@@ -59,7 +59,7 @@ def process_portfolio():
     cg_open = df_open[df_open['Type'].isna() & df_open['Ticker'].notna()].copy()
 
     # Generare text raport
-    md_content = f"""📈 *Raport Portofoliu & Dividende*
+    md_content = f"""📈 *Raport Capital Gain & Dividende*
 
 📊 *Summary General*
 • *Total Dividende Brute:* ${divs_only['Amount'].sum():,.2f}
@@ -78,10 +78,10 @@ def process_portfolio():
         md_content += f"• *{row['Ticker']}*: ${row['Net ($)']:,.2f}\n"
 
     # Salvare fisier local
-    with open("portfolio_report.md", "w", encoding="utf-8") as f:
+    with open("Raport_Dividende.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    print("Fișierul 'portfolio_report.md' a fost creat cu succes.")
+    print("Fișierul 'Raport_Dividende.md' a fost creat cu succes.")
 
 if __name__ == "__main__":
     process_portfolio()
