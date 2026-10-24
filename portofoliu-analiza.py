@@ -1,4 +1,6 @@
+"""
 Portofoliu Tones pe XTB
+"""
 
 import os
 import sys
@@ -248,7 +250,7 @@ def main():
         pe_str = f"PE{pe_val:.1f}" if pe_val is not None else "PE-"
         fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
 
-        # Rândul 1: După companie pune prețul, apoi creșterea/scăderea în %: Symbol -> Price -> Gain%
+        # Rândul 1: Bulină+Scor -> Simbol -> Preț -> P&L% -> (Motiv)
         report_text += f"*{r['bullet']}{r['score']} {r['symbol']} {price_str} {p_sign}{p_pct:.1f}% ({r['reason']})*\n"
         # Rândul 2: Monospace cu indicatorii
         report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
@@ -267,9 +269,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-'''
-
-with open("portofoliu-analiza.py", "w", encoding="utf-8") as f:
-    f.write(updated_code)
-
-print("Successfully updated portofoliu-analiza.py with the new logic and formatting!")
