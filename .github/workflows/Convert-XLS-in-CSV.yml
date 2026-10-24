@@ -29,6 +29,6 @@ jobs:
 
       - name: Salvează automat fișierul CSV în repository
         run: |
-          git add portfoliu_xtb.csv
+          git add portfoliu-xtb.csv
           git commit -m "Auto-generate portfoliu_xtb.csv from Excel" || exit 0
           git push
