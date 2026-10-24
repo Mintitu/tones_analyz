@@ -1,4 +1,4 @@
-name: 2. Convert XLS in CSV
+name: 3. Convert XLS in CSV
 
 on:
   workflow_dispatch: # Rulează doar când apeși tu manual pe butonul din GitHub
