@@ -1,2 +1,6 @@
 flask
 requests
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+requests>=2.31,<3.0
+yfinance>=0.2.54,<2.0
