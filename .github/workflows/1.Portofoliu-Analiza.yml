@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install yfinance requests pandas tabulate
+          pip install yfinance requests pandas openpyxl tabulate
 
       - name: Run Python script
         env:
