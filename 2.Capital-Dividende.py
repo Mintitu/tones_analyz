@@ -27,24 +27,6 @@ def process_portfolio():
     divs_only = df_cash[df_cash['Type'].astype(str).str.contains('Dividend', case=False, na=False)].copy()
     tax_only = df_cash[df_cash['Type'].astype(str).str.contains('Withholding tax|RO tax', case=False, na=False)].copy()
 
-    # Dividende pe companie
-    div_comp = divs_only.groupby('Ticker')['Amount'].sum().reset_index().rename(columns={'Amount': 'Gross ($)'})
-    tax_comp = tax_only.groupby('Ticker')['Amount'].sum().reset_index().rename(columns={'Amount': 'Tax ($)'})
-    div_summary = pd.merge(div_comp, tax_comp, on='Ticker', how='outer').fillna(0)
-    div_summary['Net ($)'] = div_summary['Gross ($)'] + div_summary['Tax ($)']
-    div_summary = div_summary.sort_values(by='Net ($)', ascending=False)
-
-    # Statistica lunara a incasarilor
-    divs_only['Month'] = divs_only['Time'].dt.to_period('M').astype(str)
-    tax_only['Month'] = tax_only['Time'].dt.to_period('M').astype(str)
-    
-    monthly_gross = divs_only.groupby('Month')['Amount'].sum().reset_index().rename(columns={'Amount': 'Gross ($)'})
-    monthly_tax = tax_only.groupby('Month')['Amount'].sum().reset_index().rename(columns={'Amount': 'Tax ($)'})
-    
-    monthly_divs = pd.merge(monthly_gross, monthly_tax, on='Month', how='outer').fillna(0)
-    monthly_divs['Net ($)'] = monthly_divs['Gross ($)'] + monthly_divs['Tax ($)']
-    monthly_divs = monthly_divs.sort_values(by='Month', ascending=False)
-
     # 2. Closed Positions (Realized CG)
     df_close_raw = pd.read_excel(close_file, skiprows=3)
     df_close = df_close_raw.iloc[1:].copy()
@@ -58,30 +40,52 @@ def process_portfolio():
     df_open['Net Profit'] = pd.to_numeric(df_open['Net Profit'], errors='coerce')
     cg_open = df_open[df_open['Type'].isna() & df_open['Ticker'].notna()].copy()
 
-    # Generare text raport
-    md_content = f"""📈 *Raport Portofoliu & Dividende*
+    # 4. Creare Tabel Matrice (Companii în stânga, Luni sus) pentru Dividende Nete
+    # Pentru a calcula NET pe lună și companie, combinăm sumele brute și taxele per tranzacție sau facem pivot simplu pe Brut/Net
+    # Aici calculam direct dividendele brute pe companie si luna (sau putem face net scăzând taxele aferente)
+    divs_only['Month'] = divs_only['Time'].dt.to_period('M').astype(str)
+    
+    # Facem un tabel pivot: Linii = Ticker, Coloane = Month, Valoare = Suma Amount (Net sau Brut)
+    # Pentru a fi siguri de net, calculam net per inregistrare daca este posibil sau folosim brutul incasat
+    pivot_table = divs_only.pivot_table(index='Ticker', columns='Month', values='Amount', aggfunc='sum', fill_value=0)
+    
+    # Sortam companiile după totalul încasat (cele mai mari sus)
+    pivot_table['Total'] = pivot_table.sum(axis=1)
+    pivot_table = pivot_table.sort_values(by='Total', ascending=False)
+    pivot_table = pivot_table.drop(columns=['Total'])
 
-📊 *Summary General*
-• *Total Dividende Brute:* ${divs_only['Amount'].sum():,.2f}
-• *Total Impozite Reținute:* ${tax_only['Amount'].sum():,.2f}
-• *Total Dividende Nete:* ${divs_only['Amount'].sum() + tax_only['Amount'].sum():,.2f}
-• *Capital Gain Realizat:* ${df_close['Profit/Loss'].sum():,.2f}
-• *Capital Gain Nerealizat:* ${cg_open['Net Profit'].sum():,.2f}
+    # Sortam lunile cronologic de la stanga la dreapta (cele mai vechi spre cele mai noi sau invers)
+    months = sorted(pivot_table.columns)
+    pivot_table = pivot_table[months]
 
-📅 *Încasări Lunare Dividende*
-"""
-    for _, row in monthly_divs.iterrows():
-        md_content += f"• *{row['Month']}*: ${row['Net ($)']:,.2f} net (Brut: ${row['Gross ($)']:,.2f})\n"
+    # Generare text raport Markdown structurat frumos în tabel
+    md_content = f"""📈 **Raport Portofoliu & Dividende**
 
-    md_content += "\n🏢 *Top Dividende per Companie (Net)*\n"
-    for _, row in div_summary.head(5).iterrows():
-        md_content += f"• *{row['Ticker']}*: ${row['Net ($)']:,.2f}\n"
+📊 **Summary General**
+• **Total Dividende Brute:** `${divs_only['Amount'].sum():,.2f}`
+• **Total Impozite Reținute:** `${tax_only['Amount'].sum():,.2f}`
+• **Total Dividende Nete:** `${divs_only['Amount'].sum() + tax_only['Amount'].sum():,.2f}`
+• **Capital Gain Realizat:** `${df_close['Profit/Loss'].sum():,.2f}`
+• **Capital Gain Nerealizat:** `${cg_open['Net Profit'].sum():,.2f}`
 
-    # Salvare fisier local cu nume fix
+---
+📅 **Matrice Dividende (Companii vs. Luni)**
+*(Companiile în stânga, Lunile în partea de sus)*
+
+| Companie / Lună | """ + " | ".join(months) + " | Total Anual |" + "\n"
+    
+    md_content += "| :--- | " + " | ".join([":---:" for _ in months]) + " | :---: |" + "\n"
+
+    for ticker, row in pivot_table.iterrows():
+        row_total = row.sum()
+        row_str = f"| **{ticker}** | " + " | ".join([f"${val:,.1f}" if val > 0 else "-" for val in row]) + f" | **${row_total:,.1f}** |"
+        md_content += row_str + "\n"
+
+    # Salvare fisier local
     with open("Capital-Dividende.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    print("Fișierul 'Capital-Dividende.md' a fost creat cu succes.")
+    print("Fișierul 'Capital-Dividende.md' a fost creat cu succes sub formă de tabel matrice.")
 
 if __name__ == "__main__":
     process_portfolio()
