@@ -1,10 +1,10 @@
-name: Generate Portfolio Report
+name: Dividende
 
 on:
   push:
     paths:
       - '*.xlsx'
-      - 'update_portfolio.py'
+      - 'dividede-pnl.py'
   workflow_dispatch:
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
 
       - name: Run portfolio update script
         run: |
-          python update_portfolio.py
+          python dividende-pnl.py
 
       - name: Commit and push updated Markdown report
         run: |
