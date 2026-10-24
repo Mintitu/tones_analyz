@@ -21,3 +21,14 @@ jobs:
 
       - name: Convertește Excel în CSV
         run: python convert_xls_in_csv.py
+        
+      - name: Setează identitatea pentru Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Salvează automat fișierul CSV în repository
+        run: |
+          git add portfoliu_xtb.csv
+          git commit -m "Auto-generate portfoliu_xtb.csv from Excel" || exit 0
+          git push
