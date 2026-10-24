@@ -7,7 +7,7 @@ def convert_excel_to_csv(output_csv_path="portfoliu_xtb.csv"):
     Citește toate fișierele Excel XTB disponibile (Open, Close, Cash) 
     și unifică datele pentru a păstra atât portofoliul activ, cât și istoricul complet.
     """
-    excel_files = glob.glob("USD_*.xlsx")
+    excel_files = glob.glob("USD_53476286*.xlsx")
     if not excel_files:
         print("Nu s-a găsit niciun fişier Excel în folder.")
         return
