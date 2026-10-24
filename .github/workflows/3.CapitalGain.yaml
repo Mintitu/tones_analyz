@@ -34,17 +34,18 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          REPORT_TEXT=$(cat CapitalGain.md)
+          # Trimitem varianta compactă optimizată pentru Telegram
+          REPORT_TEXT=$(cat CapitalGainTG.txt)
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
             -d "text=${REPORT_TEXT}" \
             -d "parse_mode=Markdown"
 
-      - name: Commit and push updated Markdown report
+      - name: Commit and push updated reports
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add CapitalGain.md
+          git add CapitalGain.md CapitalGainTG.txt
           git status
-          git diff-index --quiet HEAD || git commit -m "auto: update Capital Gain report"
+          git diff-index --quiet HEAD || git commit -m "auto: update CapitalGain reports (MD & TG)"
           git push
