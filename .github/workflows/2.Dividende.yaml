@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas openpyxl requests
+          pip install -r requirements.txt
 
       - name: Run portfolio update script
         run: |
@@ -34,7 +34,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          # Aici era problema: citim fisierul corect generat de script (Capital-Dividende.md)
+          # Trimitem fisierul generat pe Telegram
           REPORT_TEXT=$(cat Capital-Dividende.md)
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
@@ -47,5 +47,5 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add Capital-Dividende.md
           git status
-          git diff-index --quiet HEAD || git commit -m "auto: update portfolio report"
+          git diff-index --quiet HEAD || git commit -m "auto: update Capital-Dividende.md report"
           git push
