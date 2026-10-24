@@ -1,4 +1,4 @@
-📈 **Raport Portofoliu & Dividende**
+📈 **Dividende aferente anului 2026**
 
 📊 **Summary General**
 • **Total Dividende Brute:** `$10,152.09`
