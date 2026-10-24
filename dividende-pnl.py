@@ -1,30 +1,6 @@
 import os
 import glob
 import pandas as pd
-import requests
-
-def send_telegram_message(md_content):
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-    
-    if not token or not chat_id:
-        print("Atentie: TELEGRAM_BOT_TOKEN sau TELEGRAM_CHAT_ID nu sunt setate in secretele din GitHub!")
-        return
-
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    
-    # Telegram accepta maxim 4096 caractere pe mesaj
-    payload = {
-        "chat_id": chat_id,
-        "text": md_content[:4000],
-        "parse_mode": "Markdown"
-    }
-    
-    response = requests.post(url, json=payload)
-    if response.status_code == 200:
-        print("Raportul a fost trimis cu succes pe Telegram!")
-    else:
-        print(f"Erore la trimiterea pe Telegram: {response.text}")
 
 def process_portfolio():
     cash_files = glob.glob("*Cash*.xlsx") + glob.glob("USD_*_Cash.xlsx")
@@ -58,7 +34,7 @@ def process_portfolio():
     div_summary['Net ($)'] = div_summary['Gross ($)'] + div_summary['Tax ($)']
     div_summary = div_summary.sort_values(by='Net ($)', ascending=False)
 
-    # Statistica lunara dividende
+    # Statistica lunara a incasarilor
     divs_only['Month'] = divs_only['Time'].dt.to_period('M').astype(str)
     tax_only['Month'] = tax_only['Time'].dt.to_period('M').astype(str)
     
@@ -67,7 +43,7 @@ def process_portfolio():
     
     monthly_divs = pd.merge(monthly_gross, monthly_tax, on='Month', how='outer').fillna(0)
     monthly_divs['Net ($)'] = monthly_divs['Gross ($)'] + monthly_divs['Tax ($)']
-    monthly_divs = monthly_divs.sort_values(by='Month', ascending=False) # Cele mai recente sus
+    monthly_divs = monthly_divs.sort_values(by='Month', ascending=False)
 
     # 2. Closed Positions (Realized CG)
     df_close_raw = pd.read_excel(close_file, skiprows=3)
@@ -82,41 +58,30 @@ def process_portfolio():
     df_open['Net Profit'] = pd.to_numeric(df_open['Net Profit'], errors='coerce')
     cg_open = df_open[df_open['Type'].isna() & df_open['Ticker'].notna()].copy()
 
-    # Generare Continut Markdown detaliat cu Statistica Lunara
-    md_content = f"""# 📈 Raport Portofoliu & Dividende
+    # Generare text raport
+    md_content = f"""📈 *Raport Portofoliu & Dividende*
 
-## 📊 Summary General
-* **Total Dividende Brute:** `${divs_only['Amount'].sum():,.2f}`
-* **Total Impozite Reținute:** `${tax_only['Amount'].sum():,.2f}`
-* **Total Dividende Nete Încasate:** `${divs_only['Amount'].sum() + tax_only['Amount'].sum():,.2f}`
-* **Capital Gain Realizat:** `${df_close['Profit/Loss'].sum():,.2f}`
-* **Capital Gain Nerealizat:** `${cg_open['Net Profit'].sum():,.2f}`
+📊 *Summary General*
+• *Total Dividende Brute:* ${divs_only['Amount'].sum():,.2f}
+• *Total Impozite Reținute:* ${tax_only['Amount'].sum():,.2f}
+• *Total Dividende Nete:* ${divs_only['Amount'].sum() + tax_only['Amount'].sum():,.2f}
+• *Capital Gain Realizat:* ${df_close['Profit/Loss'].sum():,.2f}
+• *Capital Gain Nerealizat:* ${cg_open['Net Profit'].sum():,.2f}
 
----
-
-## 📅 Statistica Lunară a Dividendelor (Încasări pe Lună)
-
-| Luna | Dividende Brute ($) | Impozit Reținut ($) | Dividende Nete ($) |
-| :--- | :---: | :---: | :---: |
+📅 *Încasări Lunare Dividende*
 """
     for _, row in monthly_divs.iterrows():
-        md_content += f"| **{row['Month']}** | {row['Gross ($)']:,.2f} | {row['Tax ($)']:,.2f} | **{row['Net ($)']:,.2f}** |\n"
+        md_content += f"• *{row['Month']}*: ${row['Net ($)']:,.2f} net (Brut: ${row['Gross ($)']:,.2f})\n"
 
-    md_content += """
----
-## 🏢 Top Dividende per Companie (Net)
-"""
+    md_content += "\n🏢 *Top Dividende per Companie (Net)*\n"
     for _, row in div_summary.head(5).iterrows():
-        md_content += f"- **{row['Ticker']}**: ${row['Net ($)']:,.2f} net\n"
+        md_content += f"• *{row['Ticker']}*: ${row['Net ($)']:,.2f}\n"
 
-    # Salvare fișier local
+    # Salvare fisier local
     with open("portfolio_report.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    print("Raportul 'portfolio_report.md' a fost generat cu succes cu statistica lunară!")
-
-    # Trimitere pe Telegram
-    send_telegram_message(md_content)
+    print("Fișierul 'portfolio_report.md' a fost creat cu succes.")
 
 if __name__ == "__main__":
     process_portfolio()
