@@ -90,7 +90,7 @@ def process_capital_gain():
         f.write(md_content)
 
     # ==========================================
-    # 4. GENERARE RAPORT TELEGRAM (Optimizat Mobil)
+    # 4. GENERARE RAPORT TELEGRAM (Optimizat Mobil -> CapitalGainTG.txt)
     # ==========================================
     tg_content = f"""📈 *Raport Capital Gain*
 
@@ -107,10 +107,10 @@ def process_capital_gain():
         sign_str = "+" if tot >= 0 else ""
         tg_content += f"• *{ticker}*: `{sign_str}${tot:,.2f}`\n"
 
-    with open("TelegramReport.txt", "w", encoding="utf-8") as f:
+    with open("CapitalGainTG.txt", "w", encoding="utf-8") as f:
         f.write(tg_content)
 
-    print("Fișierele 'CapitalGain.md' și 'TelegramReport.txt' au fost generate cu succes.")
+    print("Fișierele 'CapitalGain.md' și 'CapitalGainTG.txt' au fost generate cu succes.")
 
 if __name__ == "__main__":
     process_capital_gain()
