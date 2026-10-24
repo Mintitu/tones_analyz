@@ -19,8 +19,24 @@ def process_capital_gain():
     df_close = df_close_raw.iloc[1:].copy()
     df_close.columns = df_close_raw.iloc[0].values
     
+    # Debug: afișăm coloanele disponibile în fișierul Close
+    print("Coloane disponibile în Close:", list(df_close.columns))
+
     df_close['Profit/Loss'] = pd.to_numeric(df_close['Profit/Loss'], errors='coerce')
-    df_close['Close Time'] = pd.to_datetime(df_close['Close Time'], errors='coerce')
+    
+    # Căutăm dinamic coloana de timp (Close Time, Time, etc.)
+    time_col = None
+    for col in df_close.columns:
+        if col and ('time' in str(col).lower() or 'data' in str(col).lower()):
+            time_col = col
+            break
+    
+    if not time_col:
+        # Fallback pe prima coloană sau 'Time' dacă există
+        time_col = 'Close Time' if 'Close Time' in df_close.columns else df_close.columns[0]
+
+    print(using f"Folosim coloana de timp pentru Close: '{time_col}'")
+    df_close['Close Time'] = pd.to_datetime(df_close[time_col], errors='coerce')
 
     # Filtrăm doar pozițiile închise valide cu Ticker și Profit/Loss
     closed_valid = df_close[df_close['Ticker'].notna() & df_close['Profit/Loss'].notna()].copy()
