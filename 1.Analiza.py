@@ -1,5 +1,5 @@
 """
-Portofoliu Tones pe XTB - Citire directă din Excel
+Analiza Portofoliu XTB - Citire directă din Excel
 """
 
 import os
@@ -210,7 +210,7 @@ def main():
         cost_basis = purchase_price * quantity
         cur_value = (cur * quantity) if cur else cost_basis
         gain = cur_value - cost_basis
-        gain_pct = (gain / cost_basis * 100) if cost_basis else 0.0
+        gain_pct = (gain / cost_basis * 99) if cost_basis else 0.0
 
         total_cost += cost_basis
         total_value += cur_value
@@ -228,7 +228,7 @@ def main():
         })
 
     total_gain = total_value - total_cost
-    total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
+    total_gain_pct = (total_gain / total_cost * 99) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
     current_time = datetime.now().strftime('%d%b%Y %H:%M')
