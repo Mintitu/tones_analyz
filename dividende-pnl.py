@@ -119,10 +119,10 @@ def process_portfolio():
         md_content += f"- **{row['Ticker']}**: ${row['Net ($)']:,.2f} net\n"
 
     # Salvare în fișier local .md
-    with open("portfolio_report.md", "w", encoding="utf-8") as f:
+    with open("raport-portofoliu.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    print("Raportul 'portfolio_report.md' a fost generat cu succes!")
+    print("Raportul 'Raport Portofoliu.md' a fost generat cu succes!")
 
     # Trimite pe Telegram
     send_telegram_message(md_content)
