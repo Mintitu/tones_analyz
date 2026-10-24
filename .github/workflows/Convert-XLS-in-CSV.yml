@@ -3,7 +3,7 @@ name: Convert XLS in CSV
 on:
   schedule:
     - cron: '0 20 * * 1-5'
-  workflow_dispatch: # Permite pornirea manuală sau prin API (Telegram)
+  workflow_dispatch:
 
 jobs:
   run-stock-bot:
