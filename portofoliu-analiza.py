@@ -1,6 +1,4 @@
-updated_code = '''"""
 Portofoliu Tones pe XTB
-"""
 
 import os
 import sys
