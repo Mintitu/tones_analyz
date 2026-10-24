@@ -117,46 +117,32 @@ def calculate_score_and_signal(
     roic: float | None, 
     forward_pe: float | None
 ) -> tuple[str, int, str]:
-    score = 50
+    # Pornim de la un scor de bază echilibrat
+    score = 60
 
-    # 1. Ajustare scor bazat pe P&L (gain_pct)
-    if gain_pct < -20:
-        score -= 30
-    elif gain_pct < -5:
-        score -= 15
-    elif gain_pct > 15:
-        score += 20
+    if gain_pct > 0:
+        score += min(30, int(gain_pct / 2))
+    else:
+        score -= min(30, int(abs(gain_pct) / 2))
 
-    # 2. RSI
     if rsi is not None:
-        if rsi < 35:
-            score += 20
-        elif rsi > 70:
-            score -= 25
+        if 35 <= rsi <= 65:
+            score += 10
+        elif rsi < 30:
+            score += 15 # Oportunitate de supravânzare
 
     score = max(0, min(100, score))
 
-    # --- REGULI STRICTE DE CULOARE ---
-    # Daca e pe pierdere mare sau supracumparat -> ROSU DIRECT
-    if gain_pct < -15 or (rsi is not None and rsi > 70):
-        reason = "Supracumpărat" if (rsi is not None and rsi > 70) else "Scădere mare"
-        return "🔴", score, reason
-
-    # Daca e pe o pierdere moderata / corectie -> PORTOCALIU
-    elif -15 <= gain_pct < -3:
+    # Logică flexibilă și corectă pentru culori
+    if gain_pct >= 0 and (rsi is None or rsi <= 72):
+        reason = "Profit / Creștere" if gain_pct > 5 else "Stabil"
+        return "🟢", score, reason
+    elif rsi is not None and rsi > 75:
+        return "🔴", score, "Supracumpărat"
+    elif gain_pct < -20:
+        return "🔴", score, "Scădere mare"
+    elif gain_pct < -5:
         return "🟧", score, "Corecție"
-
-    # Daca e oportunitate de acumulare (supravandut cu fundamente bune sau discount)
-    elif (rsi is not None and rsi < 40) or (gap is not None and gap < -20):
-        return "🟢", score, "Supravândut / Discount"
-
-    # Daca scorul e bun -> VERDE
-    elif score >= 65:
-        return "🟢", score, "Performant"
-
-    # Altfel -> NEGRU / GALBEN / NEUTRU
-    elif score <= 35:
-        return "🔴", score, "Risc / Slab"
     else:
         return "⚠️", score, "Neutru"
 
