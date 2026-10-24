@@ -119,55 +119,44 @@ def calculate_score_and_signal(
 ) -> tuple[str, int, str]:
     score = 50
 
+    # 1. Ajustare scor bazat pe P&L (gain_pct)
+    if gain_pct < -20:
+        score -= 30
+    elif gain_pct < -5:
+        score -= 15
+    elif gain_pct > 15:
+        score += 20
+
+    # 2. RSI
     if rsi is not None:
-        if rsi < 30:
-            score += 25
-        elif rsi < 40:
-            score += 15
+        if rsi < 35:
+            score += 20
         elif rsi > 70:
             score -= 25
-        elif rsi > 60:
-            score -= 10
-
-    if gap is not None:
-        if gap < -30:
-            score += 20
-        elif gap < -15:
-            score += 10
-        elif gap > -2:
-            score -= 10
-
-    if roic is not None:
-        roic_pct = roic * 100 if roic < 1 else roic
-        if roic_pct > 15:
-            score += 15
-        elif roic_pct > 8:
-            score += 5
-        elif roic_pct < 0:
-            score -= 15
-
-    if forward_pe is not None:
-        if 0 < forward_pe < 12:
-            score += 10
-        elif forward_pe > 30:
-            score -= 10
 
     score = max(0, min(100, score))
 
-    if rsi is not None and rsi < 35 and gain_pct < 0:
-        return "🟢", score, "Supravândut"
-    elif gain_pct < -15 and roic is not None and (roic * 100 if roic < 1 else roic) > 12:
-        return "🟢", score, "Discount Fundamental"
-    elif rsi is not None and rsi > 70 and gain_pct > 20:
-        return "🔴", score, "Supracumpărat"
-    elif gain_pct < -25:
-        return "🔴", score, "Scădere Mare"
-    elif gap is not None and gap < -25:
-        return "🟢", score, "Discount vârf"
-    elif score >= 70:
-        return "🟢", score, "Scor Excelent"
+    # --- REGULI STRICTE DE CULOARE ---
+    # Daca e pe pierdere mare sau supracumparat -> ROSU DIRECT
+    if gain_pct < -15 or (rsi is not None and rsi > 70):
+        reason = "Supracumpărat" if (rsi is not None and rsi > 70) else "Scădere mare"
+        return "🔴", score, reason
+
+    # Daca e pe o pierdere moderata / corectie -> PORTOCALIU
+    elif -15 <= gain_pct < -3:
+        return "🟧", score, "Corecție"
+
+    # Daca e oportunitate de acumulare (supravandut cu fundamente bune sau discount)
+    elif (rsi is not None and rsi < 40) or (gap is not None and gap < -20):
+        return "🟢", score, "Supravândut / Discount"
+
+    # Daca scorul e bun -> VERDE
+    elif score >= 65:
+        return "🟢", score, "Performant"
+
+    # Altfel -> NEGRU / GALBEN / NEUTRU
     elif score <= 35:
-        return "🔴", score, "Scor Slab"
+        return "🔴", score, "Risc / Slab"
     else:
         return "⚠️", score, "Neutru"
 
@@ -241,9 +230,7 @@ def main():
         pe_str = f"PE{pe_val:.1f}" if pe_val is not None else "PE-"
         fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
 
-        # Rândul 1: Bulină + Scor lipit direct + Simbol + P&L% + Preț + (Motiv)
         report_text += f"*{r['bullet']}{r['score']} {r['symbol']} {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})*\n"
-        # Rândul 2: Monospace cu indicatorii
         report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
