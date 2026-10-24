@@ -23,18 +23,13 @@ PERIOD_LABELS = {
     "1y": "1 Year", "2y": "2 Years", "5y": "5 Years", "ytd": "Year-to-Date",
 }
 
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Portfolio analysis using Yahoo Finance data.")
     parser.add_argument(
-        "-p", "--period",
-        default="6mo",
-        choices=list(PERIOD_LABELS),
-        metavar="PERIOD",
-        help=f"Historical period to analyse. Choices: {', '.join(PERIOD_LABELS)}. Default: 6mo",
+        "-p", "--period", default="6mo", choices=list(PERIOD_LABELS),
+        metavar="PERIOD", help=f"Historical period to analyse. Choices: {', '.join(PERIOD_LABELS)}. Default: 6mo",
     )
     return parser.parse_args()
-
 
 def load_holdings(path: Path) -> pd.DataFrame:
     df_raw = pd.read_csv(path)
@@ -81,7 +76,6 @@ def load_holdings(path: Path) -> pd.DataFrame:
         df.columns = ["symbol", "purchase_price", "quantity"]
         return df
 
-
 def calculate_rsi(hist_df: pd.DataFrame, window: int = 14) -> float | None:
     if hist_df.empty or len(hist_df) < window + 1:
         return None
@@ -92,7 +86,6 @@ def calculate_rsi(hist_df: pd.DataFrame, window: int = 14) -> float | None:
     rsi_series = 100 - (100 / (1 + rs))
     last_rsi = rsi_series.iloc[-1]
     return float(last_rsi) if not pd.isna(last_rsi) else None
-
 
 def fetch_quote(ticker_symbol: str, period: str) -> dict:
     t = yf.Ticker(ticker_symbol)
@@ -112,16 +105,10 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
     target_price = info.get("targetMeanPrice")
 
     return {
-        "current_price": current_price,
-        "gap_from_high": gap_from_high,
-        "rsi": rsi,
-        "ev_ebitda": ev_ebitda,
-        "roic": roic,
-        "trailing_pe": trailing_pe,
-        "forward_pe": forward_pe,
-        "target_price": target_price,
+        "current_price": current_price, "gap_from_high": gap_from_high, "rsi": rsi,
+        "ev_ebitda": ev_ebitda, "roic": roic, "trailing_pe": trailing_pe,
+        "forward_pe": forward_pe, "target_price": target_price,
     }
-
 
 def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | None) -> tuple[str, str]:
     if rsi is not None and rsi < 35 and gain_pct < 0:
@@ -134,7 +121,6 @@ def generate_recommendation(gain_pct: float, rsi: float | None, gap: float | Non
         return "🟢", "Discount vârf"
     else:
         return "🟡", "Neutru"
-
 
 def main():
     args = parse_args()
@@ -171,31 +157,23 @@ def main():
         bullet, reason = generate_recommendation(gain_pct, q["rsi"], q["gap_from_high"])
 
         rows.append({
-            "symbol": symbol,
-            "cur_price": cur,
-            "gain_pct": gain_pct,
-            "rsi": q["rsi"],
-            "gap": q["gap_from_high"],
-            "ev_ebitda": q["ev_ebitda"],
-            "roic": q["roic"],
-            "trailing_pe": q["trailing_pe"],
-            "forward_pe": q["forward_pe"],
-            "target_price": q["target_price"],
-            "bullet": bullet,
-            "reason": reason,
+            "symbol": symbol, "cur_price": cur, "gain_pct": gain_pct,
+            "rsi": q["rsi"], "gap": q["gap_from_high"], "ev_ebitda": q["ev_ebitda"],
+            "roic": q["roic"], "trailing_pe": q["trailing_pe"],
+            "forward_pe": q["forward_pe"], "target_price": q["target_price"],
+            "bullet": bullet, "reason": reason,
         })
 
     total_gain = total_value - total_cost
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    # --- HEADER ---
+    # --- HEADER (Data lipita: %d%b%Y %H:%M) ---
     current_time = datetime.now().strftime('%d%b%Y %H:%M')
     report_text = f"📈 *Portofoliu XTB* – `{current_time}`\n"
     report_text += f"📊 *Analiza P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
-    # --- FORMAT EXACT PE 2 RÂNDURI PER STOC (FĂRĂ LINIE SUPLIMENTARĂ) ---
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
@@ -213,9 +191,9 @@ def main():
         pe_str = f"PE{pe_val:.1f}" if pe_val is not None else "PE-"
         fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
 
-        # Rândul 1: Îngroșat (Bold) complet pentru claritate maximă
+        # Rândul 1: Îngroșat
         report_text += f"*{r['bullet']} {r['symbol']} {p_sign}{p_pct:.1f}% {price_str} ({r['reason']})*\n"
-        # Rândul 2: Indicatori tehnici pe font mic (monospace)
+        # Rândul 2: Monospace cu indicatorii
         report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -223,17 +201,12 @@ def main():
 
     if token and chat_id:
         url = f"https://api.telegram.org/bot{token}/sendMessage"
-        payload = {
-            "chat_id": chat_id,
-            "text": report_text,
-            "parse_mode": "Markdown"
-        }
+        payload = {"chat_id": chat_id, "text": report_text, "parse_mode": "Markdown"}
         response = requests.post(url, json=payload)
         if response.status_code == 200:
             print("Raportul super-compact a fost trimis pe Telegram!")
         else:
             print(f"Erore: {response.text}")
-
 
 if __name__ == "__main__":
     main()
