@@ -25,7 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas openpyxl requests
 
-      - name: Run portfolio update script
+      - name: Run portfoliu update script
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -36,7 +36,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add portfolio_report.md
+          git add Raport-Portofoliu.md
           git status
           git diff-index --quiet HEAD || git commit -m "auto: update portfolio report and send telegram"
           git push
