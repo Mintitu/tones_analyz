@@ -1,5 +1,5 @@
 """
-Analiza Portofoliu XTB - Citire directă din Excel
+Analiza Portofoliu XTB - Citire directă din Excel & Salvare Markdown
 """
 
 import os
@@ -17,13 +17,15 @@ import requests
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+PERIOD_LABELS = {
+    "1mo": "1 Month", "3mo": "3 Months", "6mo": "6 Months",
+    "1y": "1 Year", "2y": "2 Years", "5y": "5 Years", "ytd": "Year-to-Date",
+}
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Portfolio analysis using Yahoo Finance data.")
     parser.add_argument(
-        "-p", "--period", default="6mo", choices=list(PERIOD_LABELS := {
-            "1mo": "1 Month", "3mo": "3 Months", "6mo": "6 Months",
-            "1y": "1 Year", "2y": "2 Years", "5y": "5 Years", "ytd": "Year-to-Date",
-        }),
+        "-p", "--period", default="6mo", choices=list(PERIOD_LABELS),
         metavar="PERIOD", help="Historical period to analyse.",
     )
     return parser.parse_args()
@@ -210,7 +212,7 @@ def main():
         cost_basis = purchase_price * quantity
         cur_value = (cur * quantity) if cur else cost_basis
         gain = cur_value - cost_basis
-        gain_pct = (gain / cost_basis * 99) if cost_basis else 0.0
+        gain_pct = (gain / cost_basis * 100) if cost_basis else 0.0
 
         total_cost += cost_basis
         total_value += cur_value
@@ -228,7 +230,7 @@ def main():
         })
 
     total_gain = total_value - total_cost
-    total_gain_pct = (total_gain / total_cost * 99) if total_cost else 0
+    total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
     current_time = datetime.now().strftime('%d%b%Y %H:%M')
@@ -256,6 +258,12 @@ def main():
         report_text += f"*{r['bullet']}{r['score']} {r['symbol']} {price_str} {p_sign}{p_pct:.1f}% ({r['reason']})*\n"
         report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
 
+    # 1. Salvare fișier Analiza.md pentru GitHub Actions & Repository
+    with open("Analiza.md", "w", encoding="utf-8") as f:
+        f.write(report_text)
+    print("Fișierul Analiza.md a fost salvat pe disc!")
+
+    # 2. Trimitere direct pe Telegram
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
 
@@ -266,7 +274,7 @@ def main():
         if response.status_code == 200:
             print("Raportul a fost trimis pe Telegram cu succes!")
         else:
-            print(f"Erore: {response.text}")
+            print(f"Erore la trimiterea pe Telegram: {response.text}")
 
 if __name__ == "__main__":
     main()
