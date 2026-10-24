@@ -1,0 +1,26 @@
+name: Convert XLS in CSV
+
+on:
+  schedule:
+    - cron: '0 20 * * 1-5'
+  workflow_dispatch: # Permite pornirea manuală sau prin API (Telegram)
+
+jobs:
+  run-stock-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install yfinance requests pandas tabulate openpyxl
+
+      - name: Convertește Excel în CSV
+        run: python convert_xls_in_csv.py
