@@ -1,42 +1,42 @@
-📈 *Raport Capital Gain*
+🚀 *RAPORT CAPITAL GAIN* 🚀
 
-📊 *Summary General*
-• *Realizat:* `$5,736.46`
-• *Nerealizat:* `$-55,559.76`
-• *Total:* `$-49,823.30`
+💼 *Summary General*
+• 🟢 *Realizat:* `$5,736.46`
+• 🟠 *Nerealizat:* `$-55,559.76`
+• 💰 *Total Capital:* `$-49,823.30`
 
 ━━━━━━━━━━━━━━━━━━━━━━
-💼 *Top Companii (Realizat Total):*
-• *APLE.US*: `+$2,251.74`
-• *MU.US*: `+$909.60`
-• *MO.US*: `+$740.00`
-• *EFC.US*: `+$492.48`
-• *AVGO.US*: `+$420.30`
-• *GLAD.US*: `+$417.80`
-• *IONQ.US*: `+$264.96`
-• *COIN.US*: `+$203.50`
-• *NVDA.US*: `+$177.90`
-• *MSIF.US*: `+$172.00`
-• *NKE.US*: `+$126.10`
-• *APP.US*: `+$121.70`
-• *INSG.US*: `+$121.60`
-• *OXY.US*: `+$102.25`
-• *NLY.US*: `+$101.90`
-• *GAIN.US*: `+$99.00`
-• *VZ.US*: `+$94.68`
-• *QYLD.UK*: `+$84.16`
-• *SOFI.US*: `+$84.00`
-• *HRZN.US*: `+$82.93`
-• *UNH.US*: `+$71.43`
-• *PEP.US*: `+$71.00`
-• *CVX.US*: `+$50.00`
-• *AGNC.US*: `+$37.76`
-• *GSBD.US*: `+$31.50`
-• *IBM.US*: `+$28.00`
-• *ORC.US*: `+$25.95`
-• *SPCX.US*: `+$19.11`
-• *ARCC.US*: `+$17.20`
-• *FTAI.US*: `+$11.00`
-• *ARR.US*: `+$6.00`
-• *PK.US*: `+$0.83`
-• *GOLD*: `$-1,701.92`
+📊 *Top Companii (Realizat Total):*
+🟢 *APLE.US*: `+$2,251.74`
+🟢 *MU.US*: `+$909.60`
+🟢 *MO.US*: `+$740.00`
+🟢 *EFC.US*: `+$492.48`
+🟢 *AVGO.US*: `+$420.30`
+🟢 *GLAD.US*: `+$417.80`
+🟢 *IONQ.US*: `+$264.96`
+🟢 *COIN.US*: `+$203.50`
+🟢 *NVDA.US*: `+$177.90`
+🟢 *MSIF.US*: `+$172.00`
+🟢 *NKE.US*: `+$126.10`
+🟢 *APP.US*: `+$121.70`
+🟢 *INSG.US*: `+$121.60`
+🟢 *OXY.US*: `+$102.25`
+🟢 *NLY.US*: `+$101.90`
+🟢 *GAIN.US*: `+$99.00`
+🟢 *VZ.US*: `+$94.68`
+🟢 *QYLD.UK*: `+$84.16`
+🟢 *SOFI.US*: `+$84.00`
+🟢 *HRZN.US*: `+$82.93`
+🟢 *UNH.US*: `+$71.43`
+🟢 *PEP.US*: `+$71.00`
+🟢 *CVX.US*: `+$50.00`
+🟢 *AGNC.US*: `+$37.76`
+🟢 *GSBD.US*: `+$31.50`
+🟢 *IBM.US*: `+$28.00`
+🟢 *ORC.US*: `+$25.95`
+🟢 *SPCX.US*: `+$19.11`
+🟢 *ARCC.US*: `+$17.20`
+🟢 *FTAI.US*: `+$11.00`
+🟢 *ARR.US*: `+$6.00`
+🟢 *PK.US*: `+$0.83`
+🔴 *GOLD*: `$-1,701.92`
