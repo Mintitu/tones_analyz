@@ -39,7 +39,7 @@ def process_capital_gain():
     total_cg = total_realized + total_unrealized
 
     # ==========================================
-    # 3. GENERARE RAPORT GITHUB (Tabel Markdown)
+    # 3. GENERARE RAPORT GITHUB (CapitalGain.md - Tabel Matrice)
     # ==========================================
     pivot_table = closed_valid.pivot_table(
         index='Ticker', 
@@ -90,22 +90,23 @@ def process_capital_gain():
         f.write(md_content)
 
     # ==========================================
-    # 4. GENERARE RAPORT TELEGRAM (Optimizat Mobil -> CapitalGainTG.txt)
+    # 4. GENERARE RAPORT TELEGRAM (CapitalGainTG.txt - Compact cu iconițe)
     # ==========================================
-    tg_content = f"""📈 *Raport Capital Gain*
+    tg_content = f"""🚀 *RAPORT CAPITAL GAIN* 🚀
 
-📊 *Summary General*
-• *Realizat:* `${total_realized:,.2f}`
-• *Nerealizat:* `${total_unrealized:,.2f}`
-• *Total:* `${total_cg:,.2f}`
+💼 *Summary General*
+• 🟢 *Realizat:* `${total_realized:,.2f}`
+• 🟠 *Nerealizat:* `${total_unrealized:,.2f}`
+• 💰 *Total Capital:* `${total_cg:,.2f}`
 
 ━━━━━━━━━━━━━━━━━━━━━━
-💼 *Top Companii (Realizat Total):*
+📊 *Top Companii (Realizat Total):*
 """
     ticker_totals = closed_valid.groupby('Ticker')['Profit/Loss'].sum().sort_values(ascending=False)
     for ticker, tot in ticker_totals.items():
+        icon = "🟢" if tot >= 0 else "🔴"
         sign_str = "+" if tot >= 0 else ""
-        tg_content += f"• *{ticker}*: `{sign_str}${tot:,.2f}`\n"
+        tg_content += f"{icon} *{ticker}*: `{sign_str}${tot:,.2f}`\n"
 
     with open("CapitalGainTG.txt", "w", encoding="utf-8") as f:
         f.write(tg_content)
