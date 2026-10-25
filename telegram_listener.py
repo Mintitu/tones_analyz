@@ -15,7 +15,7 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 def home():
     return "Botul este activ!", 200
 
-@app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
+@app.route("/webhook", methods=["POST"])
 def webhook():
     print("--- CERERE PRIMITA DE LA TELEGRAM ---")
     update = request.get_json()
