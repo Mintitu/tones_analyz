@@ -1,6 +1,6 @@
 # 📊 Analiză Detaliată Portofoliu XTB
 
-**Data generării:** `2026.10.25 20:32`  
+**Data generării:** `2026.10.25 23:24`  
 **Randament Total Portofoliu:** `-19.15%`  
 **Valoare Totală / Cost:** `$230,411.39` / `$284,971.38`  
 

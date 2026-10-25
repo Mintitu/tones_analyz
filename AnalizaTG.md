@@ -1,4 +1,4 @@
-📈 *Portofoliu XTB* – `2026.10.25 20:32`
+📈 *Portofoliu XTB* – `2026.10.25 23:24`
 📊 *Analiza P&L Total* `-19.15%`
 ━━━━━━━━━━━━━━━━━━━━━━
 *🔴35 REFI 9.37$ -22.9% (Scădere Mare)*
