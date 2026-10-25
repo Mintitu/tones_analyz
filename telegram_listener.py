@@ -26,8 +26,11 @@ def webhook():
                 "Accept": "application/vnd.github+json"
             }
             
-            # Afișează în log-urile de pe Render pentru depanare
-            print(f"Verificare GH_PAT: {'EXISTA (lungime: ' + str(len(GH_PAT)) + ')' if GH_PAT else 'LIPSESTE COMPLET!'}")
+            # Verificare detaliată în log-urile de pe Render
+            if GH_PAT:
+                print(f"Verificare GH_PAT: EXISTA (lungime: {len(GH_PAT)})")
+            else:
+                print("Verificare GH_PAT: LIPSESTE COMPLET!")
             
             try:
                 res = requests.post(url, json={"ref": "main"}, headers=headers)
@@ -38,8 +41,9 @@ def webhook():
                 else:
                     send_telegram_message(chat_id, f"❌ Eroare GitHub {res.status_code}: {res.text}")
             except Exception as e:
-                print(f"Eroare de conexiune: {e}")
-                send_telegram_message(chat_id, f"❌ Eroare de sistem: {e}")
+                error_msg = str(e)
+                print(f"Eroare de conexiune / sistem: {error_msg}")
+                send_telegram_message(chat_id, f"❌ Eroare de sistem: {error_msg}")
                 
     return "OK", 200
 
