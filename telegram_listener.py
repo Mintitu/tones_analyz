@@ -9,10 +9,10 @@ REPO_NAME = "tones_analyz"
 GH_PAT = os.environ.get("GH_PAT")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
-# Setează automat webhook-ul la pornirea serverului pe Render
+# Setează automat webhook-ul corect orientat spre /webhook la pornire
 def setup_webhook():
     if TELEGRAM_BOT_TOKEN:
-        render_url = f"https://tones-analz.onrender.com/{TELEGRAM_BOT_TOKEN}"
+        render_url = "https://tones-analz.onrender.com/webhook"
         tg_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?url={render_url}"
         try:
             r = requests.get(tg_url)
@@ -24,10 +24,12 @@ def setup_webhook():
 def home():
     return "Botul este activ!", 200
 
-# Ruta folosește exact tokenul ca path, o metodă standard și sigură
-@app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
+# Rută curată, fixă, fără caractere speciale care să blocheze Flask
+@app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.get_json(silent=True)
+    print(f"Cerere primită de la Telegram: {data}")
+    
     if not data or "message" not in data:
         return "OK", 200
         
@@ -64,5 +66,4 @@ if __name__ == "__main__":
     setup_webhook()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 else:
-    # Dacă rulează pe un server WSGI pe Render, apelează configurarea la import
     setup_webhook()
