@@ -4,18 +4,27 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
+print("--- WEBHOOK SERVER INITIALIZAT SI PORNIT ---")
+
 GITHUB_USER = "Mintitu"
 REPO_NAME = "tones_analyz"
 GH_PAT = os.environ.get("GH_PAT")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
+@app.route("/", methods=["GET"])
+def home():
+    return "Botul este activ!", 200
+
 @app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
 def webhook():
+    print("--- CERERE PRIMITA DE LA TELEGRAM ---")
     update = request.get_json()
+    print(f"Update primit: {update}")
     
     if "message" in update:
         chat_id = update["message"]["chat"]["id"]
         text = update["message"].get("text", "")
+        print(f"Mesaj text primit: '{text}' de la chat_id: {chat_id}")
         
         if text == "/raport":
             send_telegram_message(chat_id, "🔄 Am primit comanda! Pornesc analiza ...")
@@ -26,7 +35,6 @@ def webhook():
                 "Accept": "application/vnd.github+json"
             }
             
-            # Verificare detaliată în log-urile de pe Render
             if GH_PAT:
                 print(f"Verificare GH_PAT: EXISTA (lungime: {len(GH_PAT)})")
             else:
