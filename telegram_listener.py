@@ -9,11 +9,23 @@ REPO_NAME = "tones_analyz"
 GH_PAT = os.environ.get("GH_PAT")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
+# Setează automat webhook-ul la pornirea serverului pe Render
+def setup_webhook():
+    if TELEGRAM_BOT_TOKEN:
+        render_url = f"https://tones-analz.onrender.com/{TELEGRAM_BOT_TOKEN}"
+        tg_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?url={render_url}"
+        try:
+            r = requests.get(tg_url)
+            print(f"Auto-set Webhook Response: {r.text}")
+        except Exception as e:
+            print(f"Eroare setare webhook: {e}")
+
 @app.route("/", methods=["GET"])
 def home():
     return "Botul este activ!", 200
 
-@app.route("/webhook", methods=["POST"])
+# Ruta folosește exact tokenul ca path, o metodă standard și sigură
+@app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
 def webhook():
     data = request.get_json(silent=True)
     if not data or "message" not in data:
@@ -33,6 +45,8 @@ def webhook():
         
         try:
             res = requests.post(url, json={"ref": "main"}, headers=headers)
+            print(f"GitHub API Status: {res.status_code} | Text: {res.text}")
+            
             if res.status_code == 204:
                 send_telegram_message(chat_id, "✅ GitHub Actions a pornit cu succes!")
             else:
@@ -47,4 +61,8 @@ def send_telegram_message(chat_id, text):
     requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "Markdown"})
 
 if __name__ == "__main__":
+    setup_webhook()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+else:
+    # Dacă rulează pe un server WSGI pe Render, apelează configurarea la import
+    setup_webhook()
