@@ -1,38 +1,25 @@
-import os
-import glob
 import pandas as pd
 
+import xtb_loader
+
+
 def process_capital_gain():
-    close_files = glob.glob("*Close*.xlsx") + glob.glob("USD_*_Close.xlsx")
-    open_files = glob.glob("*Open*.xlsx") + glob.glob("USD_*_Open.xlsx")
-
-    all_xlsx = glob.glob("*.xlsx")
-    if not all_xlsx:
-        print("Nu s-au găsit fișiere Excel (.xlsx) în director.")
-        return
-
-    close_file = close_files[0] if close_files else (all_xlsx[1] if len(all_xlsx) > 1 else all_xlsx[0])
-    open_file = open_files[0] if open_files else (all_xlsx[2] if len(all_xlsx) > 2 else all_xlsx[0])
-
-    # 1. Closed Positions (Realized Capital Gain)
-    df_close_raw = pd.read_excel(close_file, skiprows=3)
-    df_close = df_close_raw.iloc[1:].copy()
-    df_close.columns = df_close_raw.iloc[0].values
-    
+    # 1. Closed Positions (Capital Gain Realizat)
+    df_close = xtb_loader.load("closed")
     df_close['Profit/Loss'] = pd.to_numeric(df_close['Profit/Loss'], errors='coerce')
     time_col = 'Close Time (UTC)' if 'Close Time (UTC)' in df_close.columns else 'Close Time'
-    df_close['Close Time'] = pd.to_datetime(df_close[time_col], errors='coerce')
+    df_close['Close Time'] = xtb_loader.to_datetime_series(df_close[time_col])
 
+    # Doar pozitiile reale: randul "Profit/loss" de la finalul exportului nu are Ticker
     closed_valid = df_close[df_close['Ticker'].notna() & df_close['Profit/Loss'].notna()].copy()
     closed_valid['Month'] = closed_valid['Close Time'].dt.to_period('M').astype(str)
 
-    # 2. Open Positions (Unrealized Capital Gain)
-    df_open_raw = pd.read_excel(open_file, skiprows=9)
-    df_open = df_open_raw.iloc[1:].copy()
-    df_open.columns = df_open_raw.iloc[0].values
-    
+    # 2. Open Positions (Capital Gain Nerealizat)
+    df_open = xtb_loader.load("open")
     df_open['Net Profit'] = pd.to_numeric(df_open['Net Profit'], errors='coerce')
-    cg_open = df_open[df_open['Ticker'].notna()].copy()
+    # Doar randurile "parinte" (per instrument). Pozitiile individuale (Type=BUY/SELL)
+    # sunt deja incluse in ele, deci nu se aduna a doua oara.
+    cg_open = df_open[df_open['Type'].isna() & df_open['Ticker'].notna()].copy()
 
     total_realized = closed_valid['Profit/Loss'].sum()
     total_unrealized = cg_open['Net Profit'].sum()
@@ -42,10 +29,10 @@ def process_capital_gain():
     # 3. GENERARE RAPORT GITHUB (CapitalGain.md - Tabel Matrice)
     # ==========================================
     pivot_table = closed_valid.pivot_table(
-        index='Ticker', 
-        columns='Month', 
-        values='Profit/Loss', 
-        aggfunc='sum', 
+        index='Ticker',
+        columns='Month',
+        values='Profit/Loss',
+        aggfunc='sum',
         fill_value=0
     )
 
@@ -68,7 +55,7 @@ def process_capital_gain():
 *(Profit/Pierdere realizată per simbol și lună)*
 
 | Companie / Lună | """ + " | ".join(months) + " | Total Realizat |" + "\n"
-    
+
     md_content += "| :--- | " + " | ".join([":---:" for _ in months]) + " | :---: |" + "\n"
 
     for ticker, row in pivot_table.iterrows():
@@ -81,7 +68,7 @@ def process_capital_gain():
                 row_cells.append(f"-${abs(val):,.1f}")
             else:
                 row_cells.append("-")
-        
+
         total_str = f"+${row_total:,.1f}" if row_total > 0 else (f"-${abs(row_total):,.1f}" if row_total < 0 else "$0.0")
         row_str = f"| **{ticker}** | " + " | ".join(row_cells) + f" | **{total_str}** |"
         md_content += row_str + "\n"
@@ -103,9 +90,8 @@ def process_capital_gain():
 💼 *Top Companii (Realizat Total):*
 """
     ticker_totals = closed_valid.groupby('Ticker')['Profit/Loss'].sum().sort_values(ascending=False)
-    
+
     for idx, (ticker, tot) in enumerate(ticker_totals.items()):
-        # Atribuim medalii pentru primele 3 locuri, iar pentru restul iconițe mici
         if idx == 0:
             icon = "🥇"
         elif idx == 1:
@@ -114,7 +100,7 @@ def process_capital_gain():
             icon = "🥉"
         else:
             icon = "▪️"
-            
+
         sign_str = "+" if tot >= 0 else ""
         tg_content += f"{icon} *{ticker}*: `{sign_str}${tot:,.2f}`\n"
 
@@ -122,6 +108,7 @@ def process_capital_gain():
         f.write(tg_content)
 
     print("Fișierele 'CapitalGain.md' și 'CapitalGainTG.txt' au fost generate cu succes.")
+
 
 if __name__ == "__main__":
     process_capital_gain()

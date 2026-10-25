@@ -14,6 +14,8 @@ import pandas as pd
 import yfinance as yf
 import requests
 
+import xtb_loader
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -31,42 +33,27 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 def load_holdings_from_excel() -> pd.DataFrame:
-    excel_files = glob.glob("USD_*.xlsx") + glob.glob("*.xlsx")
+    """Citeste pozitiile deschise (randurile per instrument) din cel mai nou export XTB.
+    Fiecare fisier se citeste o singura data, altfel cantitatile si valoarea ies dublate."""
+    df = xtb_loader.load("open")
     positions = {}
 
-    for file_path in excel_files:
-        try:
-            xls = pd.ExcelFile(file_path)
-            for sheet in xls.sheet_names:
-                if 'open' in sheet.lower():
-                    df_raw = pd.read_excel(file_path, sheet_name=sheet, header=None)
-                    header_idx = None
-                    for idx, row in df_raw.iterrows():
-                        if 'Ticker' in row.values and ('Volume' in row.values or 'Instrument/Position' in row.values):
-                            header_idx = idx
-                            break
-                    if header_idx is not None:
-                        df = df_raw.iloc[header_idx + 1:].copy()
-                        df.columns = df_raw.iloc[header_idx].values
-                        df = df.loc[:, df.columns.notna()]
-                        for _, row in df.iterrows():
-                            cat = str(row.get('Category', '')).strip()
-                            ticker_raw = str(row.get('Ticker', '')).strip()
-                            if ticker_raw and ticker_raw != 'nan' and cat in ['STOCK', 'ETF']:
-                                ticker = ticker_raw.replace('.US', '').replace('.UK', '')
-                                try:
-                                    volume = float(row.get('Volume', 0))
-                                    open_price = float(row.get('Open price', 0))
-                                except ValueError:
-                                    volume, open_price = 0.0, 0.0
-                                
-                                if volume > 0 and open_price > 0:
-                                    if ticker not in positions:
-                                        positions[ticker] = {'shares': 0.0, 'total_cost': 0.0}
-                                    positions[ticker]['shares'] += volume
-                                    positions[ticker]['total_cost'] += volume * open_price
-        except Exception as e:
-            print(f"Eroare la citirea Excel-ului {file_path}: {e}")
+    for _, row in df.iterrows():
+        cat = str(row.get('Category', '')).strip()
+        ticker_raw = str(row.get('Ticker', '')).strip()
+        if ticker_raw and ticker_raw != 'nan' and cat in ['STOCK', 'ETF']:
+            ticker = ticker_raw.replace('.US', '').replace('.UK', '')
+            try:
+                volume = float(row.get('Volume', 0))
+                open_price = float(row.get('Open price', 0))
+            except (ValueError, TypeError):
+                volume, open_price = 0.0, 0.0
+
+            if volume > 0 and open_price > 0:
+                if ticker not in positions:
+                    positions[ticker] = {'shares': 0.0, 'total_cost': 0.0}
+                positions[ticker]['shares'] += volume
+                positions[ticker]['total_cost'] += volume * open_price
 
     holdings = []
     for ticker, data in positions.items():
@@ -108,7 +95,11 @@ def fetch_quote(ticker_symbol: str, period: str) -> dict:
     forward_pe = info.get("forwardPE")
     target_price = info.get("targetMeanPrice")
     
-    div_yield = info.get("dividendYield")
+    div_rate = info.get("dividendRate")
+    if div_rate and current_price:
+        div_yield = div_rate / current_price * 100          # in procente
+    else:
+        div_yield = info.get("dividendYield")               # yfinance il da deja in procente
     payout_ratio = info.get("payoutRatio")
     roa = info.get("returnOnAssets")
     roe = info.get("returnOnEquity")
@@ -288,7 +279,7 @@ def main():
         pm_val = r['profit_margins'] * 100 if r['profit_margins'] is not None else None
         pm_str = f"{pm_val:.1f}%" if pm_val is not None else "-"
         
-        div_val = r['div_yield'] * 100 if r['div_yield'] is not None else None
+        div_val = r['div_yield'] if r['div_yield'] is not None else None
         div_str = f"{div_val:.2f}%" if div_val is not None else "-"
         
         payout_val = r['payout_ratio'] * 100 if r['payout_ratio'] is not None else None
