@@ -1,4 +1,4 @@
-📈 *Portofoliu XTB* – `2026.10.25 13:23`
+📈 *Portofoliu XTB* – `2026.10.25 20:32`
 📊 *Analiza P&L Total* `-19.15%`
 ━━━━━━━━━━━━━━━━━━━━━━
 *🔴35 REFI 9.37$ -22.9% (Scădere Mare)*
@@ -10,7 +10,7 @@
 *🟧60 CAG 14.86$ -7.8% (Corecție Mică)*
 `TP13.7$ Gap-24% EV8.7x ROIC- RSI69 PE- FwdPE9.9`
 *🟢76 AVGO 321.68$ -14.5% (Supravândut Mediu)*
-`TP529.1$ Gap-35% EV30.1x ROIC- RSI29 PE42.9 FwdPE16.6`
+`TP529.1$ Gap-35% EV30.1x ROIC- RSI29 PE41.1 FwdPE16.6`
 *🟢48 ARR 12.88$ -26.3% (Discount Mediu)*
 `TP16.6$ Gap-24% EV- ROIC- RSI44 PE257.6 FwdPE4.5`
 *🟢50 ARCC 18.64$ +1.0% (Stabil / Mic)*
