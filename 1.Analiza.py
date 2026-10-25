@@ -236,7 +236,8 @@ def main():
     total_gain = total_value - total_cost
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
-    current_time = datetime.now().strftime('%d %b %Y %H:%M')
+    # Format data cerut: 2026.10.25 00:53
+    current_time = datetime.now().strftime('%Y.%m.%d %H:%M')
 
     # -------------------------------------------------------------
     # 1. RAPORT TABELAR GRAFIC COMPACT (Analiza.md)
@@ -247,8 +248,9 @@ def main():
     tbl_md += f"**Valoare Totală / Cost:** `${total_value:,.2f}` / `${total_cost:,.2f}`  \n\n"
     tbl_md += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
     
-    tbl_md += f"| Companie | Semnal | Preț | TP | P&L (%) | Evaluare | Gap ATH | RSI | P/E | FP/E | EV/EBITDA | ROIC |\n"
-    tbl_md += f"|:---|:---:|:---:|:---:|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|\n"
+    # Antet rearanjat: ATH imediat după TP, Semnal comasat în Evaluare
+    tbl_md += f"| Companie | Preț | TP | ATH | P&L (%) | Evaluare & Semnal | RSI | P/E | FP/E | EV/EBITDA | ROIC |\n"
+    tbl_md += f"|:---|:---:|:---:|:---:|:---:|:---|:---:|:---:|:---:|:---:|:---:|\n"
 
     for r in rows:
         p_pct = r['gain_pct']
@@ -264,9 +266,9 @@ def main():
         pe_str = f"{pe_val:.1f}" if pe_val is not None else "-"
         fwd_pe_str = f"{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "-"
 
-        signal_cell = f"{r['bullet']} **{r['score']}**"
+        eval_signal_cell = f"{r['bullet']} **{r['score']}** {r['reason']}"
         
-        tbl_md += f"| **{r['symbol']}** | {signal_cell} | {price_str} | {tp_str} | `{p_sign}{p_pct:.1f}%` | {r['reason']} | {gap_str} | {rsi_str} | {pe_str} | {fwd_pe_str} | {ev_str} | {roic_str} |\n"
+        tbl_md += f"| **{r['symbol']}** | {price_str} | {tp_str} | {gap_str} | `{p_sign}{p_pct:.1f}%` | {eval_signal_cell} | {rsi_str} | {pe_str} | {fwd_pe_str} | {ev_str} | {roic_str} |\n"
 
     with open("Analiza.md", "w", encoding="utf-8") as f:
         f.write(tbl_md)
@@ -307,7 +309,6 @@ def main():
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
 
     if token and chat_id:
-        # A) Trimitere document Analiza.md ca atașament
         doc_url = f"https://api.telegram.org/bot{token}/sendDocument"
         caption_text = f"📊 Raport Tabelar Portofoliu XTB - {current_time}"
         
@@ -321,7 +322,6 @@ def main():
         else:
             print(f"Erore la trimiterea documentului: {res_doc.text}")
 
-        # B) Trimitere mesaj text rezumat
         msg_url = f"https://api.telegram.org/bot{token}/sendMessage"
         payload = {"chat_id": chat_id, "text": report_text, "parse_mode": "Markdown"}
         res_msg = requests.post(msg_url, json=payload)
