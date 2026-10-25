@@ -1,27 +1,27 @@
-📊 **Dividende aferente anului 2026**
+📊 Dividende aferente anului 2026
 
-💰 **Summary General:**
-• **Brute:** `$10,152.09`
-• **Impozite:** `$-1,668.78`
-• **Nete:** `$8,483.31`
-• **Capital Realizat:** `$11,472.92`
+💰 Summary General:
+• Brute: $10,152.09
+• Impozite: $-1,668.78
+• Nete: $8,483.31
+• Capital Realizat: $11,472.92
 
-🏢 **Top Încasări per Companie:**
-🥇 **REFI.US**: `$2,750.91`
-🥈 **DX.US**: `$2,737.00`
-🥉 **APLE.US**: `$999.52`
-🏅 **ARCC.US**: `$825.36`
-🔹 **SCM.US**: `$765.04`
-🔹 **ARR.US**: `$725.76`
-🔹 **CAG.US**: `$656.25`
-🔹 **NLY.US**: `$276.50`
-🔹 **ARE.US**: `$144.00`
-🔹 **MO.US**: `$106.00`
-🔹 **AVGO.US**: `$35.01`
-🔹 **QYLD.UK**: `$33.94`
-🔹 **PEP.US**: `$29.60`
-🔹 **OXY.US**: `$24.70`
-🔹 **GAIN.US**: `$24.00`
-🔹 **CVX.US**: `$17.80`
-🔹 **MU.US**: `$0.45`
-🔹 **PK.US**: `$0.25`
+🏢 Top Încasări per Companie:
+🥇 REFI.US: $2,750.91
+🥈 DX.US: $2,737.00
+🥉 APLE.US: $999.52
+🏅 ARCC.US: $825.36
+🔹 SCM.US: $765.04
+🔹 ARR.US: $725.76
+🔹 CAG.US: $656.25
+🔹 NLY.US: $276.50
+🔹 ARE.US: $144.00
+🔹 MO.US: $106.00
+🔹 AVGO.US: $35.01
+🔹 QYLD.UK: $33.94
+🔹 PEP.US: $29.60
+🔹 OXY.US: $24.70
+🔹 GAIN.US: $24.00
+🔹 CVX.US: $17.80
+🔹 MU.US: $0.45
+🔹 PK.US: $0.25
