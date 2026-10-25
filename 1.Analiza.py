@@ -144,7 +144,6 @@ def calculate_score_and_signal(
     bullet = "🟡"
     reason = "Neutru"
 
-    # Evaluare inspirată de agenții AI (TradingAgents / virattt AI Financial Agent)
     if rsi is not None and rsi < 25 and gain_pct < 0:
         bullet = "🟢"
         reason = "Supravândut Mare"
@@ -240,15 +239,16 @@ def main():
     current_time = datetime.now().strftime('%d %b %Y %H:%M')
 
     # -------------------------------------------------------------
-    # 1. RAPORT TABELAR GRAVIC MARE (Analiza.md)
+    # 1. RAPORT TABELAR GRAFIC COMPACT (Analiza.md)
     # -------------------------------------------------------------
     tbl_md = f"# 📊 Analiză Detaliată Portofoliu XTB\n\n"
     tbl_md += f"**Data generării:** `{current_time}`  \n"
     tbl_md += f"**Randament Total Portofoliu:** `{sign}{total_gain_pct:.2f}%`  \n"
     tbl_md += f"**Valoare Totală / Cost:** `${total_value:,.2f}` / `${total_cost:,.2f}`  \n\n"
     tbl_md += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-    tbl_md += f"| Companie | Preț ($) | P&L (%) | Semnal | Evaluare | TP Target | Gap ATH | RSI | P/E | Fwd P/E | EV/EBITDA | ROIC |\n"
-    tbl_md += f"| :--- | :---: | :---: | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n"
+    
+    tbl_md += f"| Companie | Semnal | Preț | TP | P&L (%) | Evaluare | Gap ATH | RSI | P/E | FP/E | EV/EBITDA | ROIC |\n"
+    tbl_md += f"|:---|:---:|:---:|:---:|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|\n"
 
     for r in rows:
         p_pct = r['gain_pct']
@@ -266,7 +266,7 @@ def main():
 
         signal_cell = f"{r['bullet']} **{r['score']}**"
         
-        tbl_md += f"| **{r['symbol']}** | {price_str} | `{p_sign}{p_pct:.1f}%` | {signal_cell} | {r['reason']} | {tp_str} | {gap_str} | {rsi_str} | {pe_str} | {fwd_pe_str} | {ev_str} | {roic_str} |\n"
+        tbl_md += f"| **{r['symbol']}** | {signal_cell} | {price_str} | {tp_str} | `{p_sign}{p_pct:.1f}%` | {r['reason']} | {gap_str} | {rsi_str} | {pe_str} | {fwd_pe_str} | {ev_str} | {roic_str} |\n"
 
     with open("Analiza.md", "w", encoding="utf-8") as f:
         f.write(tbl_md)
@@ -301,7 +301,7 @@ def main():
     print("Fișierul 'AnalizaTG.md' a fost salvat cu succes!")
 
     # -------------------------------------------------------------
-    # 3. TRIMITERE DOCUMENT .MD PE TELEGRAM (sendDocument)
+    # 3. TRIMITERE PE TELEGRAM (Document MD + Mesaj Text)
     # -------------------------------------------------------------
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
@@ -309,7 +309,7 @@ def main():
     if token and chat_id:
         # A) Trimitere document Analiza.md ca atașament
         doc_url = f"https://api.telegram.org/bot{token}/sendDocument"
-        caption_text = f"📊 Raport Grafic Analiză Portofoliu XTB - {current_time}"
+        caption_text = f"📊 Raport Tabelar Portofoliu XTB - {current_time}"
         
         with open("Analiza.md", "rb") as doc_file:
             files = {"document": ("Analiza.md", doc_file, "text/markdown")}
