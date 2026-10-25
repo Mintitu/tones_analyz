@@ -18,7 +18,7 @@ def webhook():
         text = update["message"].get("text", "")
         
         if text == "/raport":
-            send_telegram_message(chat_id, "🔄 Am primit comanda! Pornesc raportul pe GitHub...")
+            send_telegram_message(chat_id, "🔄 Am primit comanda! Pornesc analiza pe GitHub...")
             
             url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}/actions/workflows/1.Analiza.yml/dispatches"
             headers = {
