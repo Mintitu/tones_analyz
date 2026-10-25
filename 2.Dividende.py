@@ -46,12 +46,15 @@ def process_portfolio():
     
     pivot_table['Total'] = pivot_table.sum(axis=1)
     pivot_table = pivot_table.sort_values(by='Total', ascending=False)
+    
+    # Top companii pentru Telegram (fara coloana Total din matricea de export)
+    top_companies = pivot_table['Total'].copy()
     pivot_table = pivot_table.drop(columns=['Total'])
 
     months = sorted(pivot_table.columns)
     pivot_table = pivot_table[months]
 
-    # --- Versiunea Markdown (pentru GitHub) ---
+    # --- 1. Versiunea Markdown completă (pentru GitHub - tabel matrice frumos) ---
     md_content = f"""📈 **Dividende aferente anului 2026**
 
 📊 **Summary General**
@@ -62,7 +65,7 @@ def process_portfolio():
 • **Capital Gain Nerealizat:** `${cg_open['Net Profit'].sum():,.2f}`
 
 ---
-📅 **Matrice Dividende (Companii vs. Luni)**
+📅 **Matrice Detaliată pe Luni și Companii**
 
 | Companie / Lună | """ + " | ".join(months) + " | Total Anual |" + "\n"
     md_content += "| :--- | " + " | ".join([":---:" for _ in months]) + " | :---: |" + "\n"
@@ -75,27 +78,26 @@ def process_portfolio():
     with open("Dividende.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    # --- Versiunea Text Simplu (pentru Telegram) ---
-    txt_content = f"""Dividende aferente anului 2026
+    # --- 2. Versiunea Curată pentru Telegram (cu iconițe și doar totalul pe companie) ---
+    txt_content = f"""📊 **Dividende aferente anului 2026**
 
-SUMMARY GENERAL:
-- Total Dividende Brute: ${divs_only['Amount'].sum():,.2f}
-- Total Impozite Retinute: ${tax_only['Amount'].sum():,.2f}
-- Total Dividende Nete: ${divs_only['Amount'].sum() + tax_only['Amount'].sum():,.2f}
-- Capital Gain Realizat: ${df_close['Profit/Loss'].sum():,.2f}
-- Capital Gain Nerealizat: ${cg_open['Net Profit'].sum():,.2f}
+💰 **Summary General:**
+• **Brute:** `${divs_only['Amount'].sum():,.2f}`
+• **Impozite:** `${tax_only['Amount'].sum():,.2f}`
+• **Nete:** `${divs_only['Amount'].sum() + tax_only['Amount'].sum():,.2f}`
+• **Capital Realizat:** `${df_close['Profit/Loss'].sum():,.2f}`
 
-INCASARI PE LUNI SI COMPANII:
+🏢 **Top Încasări per Companie:**
 """
-    for ticker, row in pivot_table.iterrows():
-        row_total = row.sum()
-        months_str = ", ".join([f"{m}: ${v:,.1f}" for m, v in zip(months, row) if v > 0])
-        txt_content += f"- {ticker} (Total: ${row_total:,.1f}) -> [{months_str}]\n"
+    icons = ["🥇", "🥈", "🥉", "🏅", "🔹", "🔹", "🔹", "🔹", "🔹", "🔹"]
+    for idx, (ticker, total_val) in enumerate(top_companies.items()):
+        icon = icons[idx] if idx < len(icons) else "🔹"
+        txt_content += f"{icon} **{ticker}**: `${total_val:,.2f}`\n"
 
-    with open("DividendeTG.txt", "w", encoding="utf-8`", errors="ignore") as f:
+    with open("DividendeTG.txt", "w", encoding="utf-8") as f:
         f.write(txt_content)
 
-    print("Fisierele 'Dividende.md' si 'DividendeTG.txt' au fost create cu succes.")
+    print("Fișierele 'Dividende.md' și 'DividendeTG.txt' au fost generate cu succes.")
 
 if __name__ == "__main__":
     process_portfolio()
