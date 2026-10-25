@@ -90,21 +90,31 @@ def process_capital_gain():
         f.write(md_content)
 
     # ==========================================
-    # 4. GENERARE RAPORT TELEGRAM (CapitalGainTG.txt - Compact cu iconițe)
+    # 4. GENERARE RAPORT TELEGRAM (CapitalGainTG.txt - Compact cu medalii)
     # ==========================================
-    tg_content = f"""🚀 *RAPORT CAPITAL GAIN* 🚀
+    tg_content = f"""📈 *Raport Capital Gain*
 
-💼 *Summary General*
-• 🟢 *Realizat:* `${total_realized:,.2f}`
-• 🟠 *Nerealizat:* `${total_unrealized:,.2f}`
-• 💰 *Total Capital:* `${total_cg:,.2f}`
+📊 *Summary General*
+• *Realizat:* `${total_realized:,.2f}`
+• *Nerealizat:* `${total_unrealized:,.2f}`
+• *Total:* `${total_cg:,.2f}`
 
 ━━━━━━━━━━━━━━━━━━━━━━
-📊 *Top Companii (Realizat Total):*
+💼 *Top Companii (Realizat Total):*
 """
     ticker_totals = closed_valid.groupby('Ticker')['Profit/Loss'].sum().sort_values(ascending=False)
-    for ticker, tot in ticker_totals.items():
-        icon = "🟢" if tot >= 0 else "🔴"
+    
+    for idx, (ticker, tot) in enumerate(ticker_totals.items()):
+        # Atribuim medalii pentru primele 3 locuri, iar pentru restul iconițe mici
+        if idx == 0:
+            icon = "🥇"
+        elif idx == 1:
+            icon = "🥈"
+        elif idx == 2:
+            icon = "🥉"
+        else:
+            icon = "▪️"
+            
         sign_str = "+" if tot >= 0 else ""
         tg_content += f"{icon} *{ticker}*: `{sign_str}${tot:,.2f}`\n"
 
