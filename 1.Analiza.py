@@ -1,5 +1,6 @@
 """
-Analiza Portofoliu XTB - Citire directă din Excel & Salvare Markdown
+Analiza Portofoliu XTB - Citire directă din Excel & Salvare/Trimire Fișier Markdown pe Telegram
+Modelat după arhitectura AI Financial Agents (virattt / TradingAgents / Free US Investment Agent)
 """
 
 import os
@@ -122,68 +123,92 @@ def calculate_score_and_signal(
     roic: float | None, 
     forward_pe: float | None
 ) -> tuple[str, int, str]:
+    """
+    Sistem de decizie multi-agent inspirat din TradingAgents & virattt AI Agent Framework:
+    🟢 STRONG BUY / BULLISH (Verde) - Oportunitate clară de cumpărare / Profit solid
+    🟡 HOLD / NEUTRAL / ACCUMULATE (Galben) - Consolidare, Valoare Fair, Cumpărare treptată
+    🟧 CAUTION / TAKE PROFIT (Portocaliu) - Supracumpărat moderat sau corecție ușoară
+    🔴 RISK / BEARISH (Roșu) - Scădere critică sau supracumpărare extremă
+    """
     score = 50
 
+    # Ajustare Scor bazată pe Momentum & P&L
     if gain_pct > 0:
         score += min(25, int(gain_pct / 1.5))
     else:
         score -= min(25, int(abs(gain_pct) / 1.5))
 
+    # Ajustare Tehnică (RSI)
     if rsi is not None:
-        if rsi < 35:
-            score += 20
+        if rsi < 30:
+            score += 25
+        elif rsi < 40:
+            score += 10
         elif rsi > 70:
             score -= 20
 
+    # Ajustare Valuare & Fundamental
     if gap is not None and gap < -20:
         score += 15
+    if roic is not None and roic > 0.15:
+        score += 10
+    if forward_pe is not None and forward_pe < 15:
+        score += 10
 
     score = max(0, min(99, score))
 
-    bullet = "⚠️"
-    reason = "Neutru"
+    # Algoritm decizional cu integrare stări Neutru/Acumulare (🟡)
+    if rsi is not None and rsi < 28 and gain_pct < 0:
+        return "🟢", score, "Strong Buy (Supravândut)"
+    elif gap is not None and gap < -30 and (rsi is None or rsi < 45):
+        return "🟢", score, "Oportunitate Discount"
+    elif gain_pct >= 20 and (rsi is None or rsi <= 72):
+        return "🟢", score, "Profit Solid"
+    elif gain_pct >= 5 and gain_pct < 20 and (rsi is None or rsi <= 65):
+        return "🟢", score, "Trend Ascendent"
+    
+    # Stări Galbene (🟡) - Acumulare, consolidare, zona neutră
+    elif rsi is not None and 40 <= rsi <= 55 and -5 <= gain_pct <= 5:
+        return "🟡", score, "Consolidare / Neutral"
+    elif gap is not None and -20 <= gap <= -10 and (rsi is None or rsi < 55):
+        return "🟡", score, "Zone de Acumulare"
+    elif gain_pct >= 0 and gain_pct < 5 and (rsi is None or rsi <= 60):
+        return "🟡", score, "Stabil / Fair Value"
+    elif gain_pct < 0 and gain_pct >= -5 and (rsi is None or rsi >= 40):
+        return "🟡", score, "Corecție Ușoară"
+    
+    # Stări Portocalii (🟧) - Atenție / Rebalansare
+    elif gain_pct < -5 and gain_pct >= -15:
+        return "🟧", score, "Corecție Medie"
+    elif rsi is not None and 70 <= rsi < 78:
+        return "🟧", score, "Supracumpărat Mediu"
+    
+    # Stări Roșii (🔴) - Risc Sporit
+    elif gain_pct < -15:
+        return "🔴", score, "Scădere Critică"
+    elif rsi is not None and rsi >= 78:
+        return "🔴", score, "Supracumpărat Extrem"
 
-    if rsi is not None and rsi < 25 and gain_pct < 0:
-        bullet = "🟢"
-        reason = "Supravândut Mare"
-    elif rsi is not None and rsi < 35 and gain_pct < 0:
-        bullet = "🟢"
-        reason = "Supravândut Mediu"
-    elif gap is not None and gap < -35 and (rsi is None or rsi < 45):
-        bullet = "🟢"
-        reason = "Discount Mare"
-    elif gap is not None and gap < -20 and (rsi is None or rsi < 50):
-        bullet = "🟢"
-        reason = "Discount Mediu"
-    elif gain_pct >= 25 and (rsi is None or rsi <= 75):
-        bullet = "🟢"
-        reason = "Profit Mare"
-    elif gain_pct >= 10 and gain_pct < 25 and (rsi is None or rsi <= 70):
-        bullet = "🟢"
-        reason = "Profit Solid"
-    elif gain_pct >= 0 and gain_pct < 10 and (rsi is None or rsi <= 65):
-        bullet = "🟢"
-        reason = "Stabil / Mic"
-    elif gain_pct < 0 and gain_pct >= -8 and (rsi is None or rsi >= 35):
-        bullet = "🟧"
-        reason = "Corecție Mică"
-    elif gain_pct < -8 and gain_pct >= -20:
-        bullet = "🟧"
-        reason = "Corecție Medie"
-    elif gain_pct < -20 and gain_pct >= -35:
-        bullet = "🔴"
-        reason = "Scădere Mare"
-    elif gain_pct < -35:
-        bullet = "🔴"
-        reason = "Scădere Critică"
-    elif rsi is not None and rsi > 78:
-        bullet = "🔴"
-        reason = "Supracumpărat Mare"
-    elif rsi is not None and rsi > 70:
-        bullet = "🟧"
-        reason = "Supracumpărat Mediu"
+    return "🟡", score, "Menținere (Hold)"
 
-    return bullet, score, reason
+def send_telegram_document(token: str, chat_id: str, file_path: str, caption: str = ""):
+    """Trimite fișierul Markdown ca document atasat pe Telegram."""
+    url = f"https://api.telegram.org/bot{token}/sendDocument"
+    try:
+        with open(file_path, "rb") as doc:
+            files = {"document": doc}
+            data = {
+                "chat_id": chat_id,
+                "caption": caption,
+                "parse_mode": "Markdown"
+            }
+            res = requests.post(url, data=data, files=files)
+            if res.status_code == 200:
+                print(" Documentul Markdown a fost trimis pe Telegram cu succes!")
+            else:
+                print(f" Eroare Telegram Document: {res.text}")
+    except Exception as e:
+        print(f" Eroare la trimitere document: {e}")
 
 def main():
     args = parse_args()
@@ -233,48 +258,51 @@ def main():
     total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
     sign = "+" if total_gain >= 0 else ""
 
-    current_time = datetime.now().strftime('%d%b%Y %H:%M')
-    report_text = f"📈 *Portofoliu XTB* – `{current_time}`\n"
-    report_text += f"📊 *Analiza P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
-    report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
+    current_time = datetime.now().strftime('%d %b %Y %H:%M')
+    
+    # Generare conținut Markdown detaliat
+    report_md = f"# 📈 Analiză Portofoliu XTB - AI Financial Agent\n\n"
+    report_md += f"**Data generării:** `{current_time}`  \n"
+    report_md += f"**P&L Total Portofoliu:** `{sign}{total_gain_pct:.2f}%`  \n"
+    report_md += f"**Valoare Totală:** `${total_value:,.2f}`  \n\n"
+    report_md += f"---\n\n"
+    report_md += f"## 📊 Detalii Poziții & Semnale\n\n"
 
     for r in rows:
         p_pct = r['gain_pct']
         p_sign = "+" if p_pct >= 0 else ""
-        
         price_str = f"{r['cur_price']:.2f}$" if r['cur_price'] is not None else "N/A"
-        tp_str = f"TP{r['target_price']:.1f}$" if r['target_price'] is not None else "TP-"
-        
-        gap_str = f"Gap{r['gap']:.0f}%" if r['gap'] is not None else "Gap-"
-        ev_str = f"EV{r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV-"
+        tp_str = f"TP: {r['target_price']:.1f}$" if r['target_price'] is not None else "TP: N/A"
+        gap_str = f"Gap: {r['gap']:.0f}%" if r['gap'] is not None else "Gap: N/A"
+        ev_str = f"EV/EBITDA: {r['ev_ebitda']:.1f}x" if r['ev_ebitda'] is not None else "EV/EBITDA: N/A"
         roic_val = r['roic'] * 100 if r['roic'] is not None else None
-        roic_str = f"ROIC{roic_val:.1f}%" if roic_val is not None else "ROIC-"
-        
-        rsi_str = f"RSI{r['rsi']:.0f}" if r['rsi'] is not None else "RSI-"
+        roic_str = f"ROIC: {roic_val:.1f}%" if roic_val is not None else "ROIC: N/A"
+        rsi_str = f"RSI: {r['rsi']:.0f}" if r['rsi'] is not None else "RSI: N/A"
         pe_val = r['trailing_pe']
-        pe_str = f"PE{pe_val:.1f}" if pe_val is not None else "PE-"
-        fwd_pe_str = f"FwdPE{r['forward_pe']:.1f}" if r['forward_pe'] is not None else "FwdPE-"
+        pe_str = f"P/E: {pe_val:.1f}" if pe_val is not None else "P/E: N/A"
+        fwd_pe_str = f"Fwd P/E: {r['forward_pe']:.1f}" if r['forward_pe'] is not None else "Fwd P/E: N/A"
 
-        report_text += f"*{r['bullet']}{r['score']} {r['symbol']} {price_str} {p_sign}{p_pct:.1f}% ({r['reason']})*\n"
-        report_text += f"`{tp_str} {gap_str} {ev_str} {roic_str} {rsi_str} {pe_str} {fwd_pe_str}`\n"
+        report_md += f"### {r['bullet']} [{r['score']}/99] {r['symbol']} — {price_str} ({p_sign}{p_pct:.2f}%)\n"
+        report_md += f"**Semnal AI:** `{r['reason']}`  \n"
+        report_md += f"**Tehnic & Valuation:** `{tp_str}` | `{gap_str}` | `{rsi_str}`  \n"
+        report_md += f"**Fundamente:** `{ev_str}` | `{roic_str}` | `{pe_str}` | `{fwd_pe_str}`  \n\n"
 
-    # 1. Salvare fișier Analiza.md pentru GitHub Actions & Repository
+    # Salvare fișiere pe disc
     with open("Analiza.md", "w", encoding="utf-8") as f:
-        f.write(report_text)
-    print("Fișierul Analiza.md a fost salvat pe disc!")
+        f.write(report_md)
 
-    # 2. Trimitere direct pe Telegram
+    with open("AnalizaTG.md", "w", encoding="utf-8") as f:
+        f.write(report_md)
+
+    print("Fișierele Analiza.md și AnalizaTG.md au fost salvate pe disc!")
+
+    # Trimitere ca fișier atașat pe Telegram
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
 
     if token and chat_id:
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        payload = {"chat_id": chat_id, "text": report_text, "parse_mode": "Markdown"}
-        response = requests.post(url, json=payload)
-        if response.status_code == 200:
-            print("Raportul a fost trimis pe Telegram cu succes!")
-        else:
-            print(f"Erore la trimiterea pe Telegram: {response.text}")
+        caption_msg = f"📈 *Raport Analiză Portofoliu XTB*\n🗓 `{current_time}`\n📊 P&L Total: `{sign}{total_gain_pct:.2f}%`"
+        send_telegram_document(token, chat_id, "AnalizaTG.md", caption=caption_msg)
 
 if __name__ == "__main__":
     main()
