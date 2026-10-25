@@ -34,14 +34,14 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          # Trimitem varianta compactă optimizată pentru Telegram
+          # Trimitem pe Telegram varianta compactă cu iconițe
           REPORT_TEXT=$(cat CapitalGainTG.txt)
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
             -d "text=${REPORT_TEXT}" \
             -d "parse_mode=Markdown"
 
-      - name: Commit and push updated reports
+      - name: Commit and push updated reports to GitHub
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
