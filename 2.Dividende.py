@@ -47,14 +47,13 @@ def process_portfolio():
     pivot_table['Total'] = pivot_table.sum(axis=1)
     pivot_table = pivot_table.sort_values(by='Total', ascending=False)
     
-    # Top companii pentru Telegram (fara coloana Total din matricea de export)
     top_companies = pivot_table['Total'].copy()
     pivot_table = pivot_table.drop(columns=['Total'])
 
     months = sorted(pivot_table.columns)
     pivot_table = pivot_table[months]
 
-    # --- 1. Versiunea Markdown completă (pentru GitHub - tabel matrice frumos) ---
+    # --- 1. Versiunea Markdown (Dividende.md) ---
     md_content = f"""📈 **Dividende aferente anului 2026**
 
 📊 **Summary General**
@@ -78,21 +77,21 @@ def process_portfolio():
     with open("Dividende.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    # --- 2. Versiunea Curată pentru Telegram (cu iconițe și doar totalul pe companie) ---
-    txt_content = f"""📊 **Dividende aferente anului 2026**
+    # --- 2. Versiunea Text pentru Telegram (DividendeTG.txt) ---
+    txt_content = f"""📊 Dividende aferente anului 2026
 
-💰 **Summary General:**
-• **Brute:** `${divs_only['Amount'].sum():,.2f}`
-• **Impozite:** `${tax_only['Amount'].sum():,.2f}`
-• **Nete:** `${divs_only['Amount'].sum() + tax_only['Amount'].sum():,.2f}`
-• **Capital Realizat:** `${df_close['Profit/Loss'].sum():,.2f}`
+💰 Summary General:
+• Brute: ${divs_only['Amount'].sum():,.2f}
+• Impozite: ${tax_only['Amount'].sum():,.2f}
+• Nete: ${divs_only['Amount'].sum() + tax_only['Amount'].sum():,.2f}
+• Capital Realizat: ${df_close['Profit/Loss'].sum():,.2f}
 
-🏢 **Top Încasări per Companie:**
+🏢 Top Încasări per Companie:
 """
     icons = ["🥇", "🥈", "🥉", "🏅", "🔹", "🔹", "🔹", "🔹", "🔹", "🔹"]
     for idx, (ticker, total_val) in enumerate(top_companies.items()):
         icon = icons[idx] if idx < len(icons) else "🔹"
-        txt_content += f"{icon} **{ticker}**: `${total_val:,.2f}`\n"
+        txt_content += f"{icon} {ticker}: ${total_val:,.2f}\n"
 
     with open("DividendeTG.txt", "w", encoding="utf-8") as f:
         f.write(txt_content)
