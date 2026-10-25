@@ -15,13 +15,12 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 def home():
     return "Botul este activ!", 200
 
-@app.route("/webhook", methods=["POST"])
-def webhook():
+def handle_telegram_update():
     print("--- CERERE PRIMITA DE LA TELEGRAM ---")
-    update = request.get_json()
+    update = request.get_json(silent=True)
     print(f"Update primit: {update}")
     
-    if "message" in update:
+    if update and "message" in update:
         chat_id = update["message"]["chat"]["id"]
         text = update["message"].get("text", "")
         print(f"Mesaj text primit: '{text}' de la chat_id: {chat_id}")
@@ -54,6 +53,15 @@ def webhook():
                 send_telegram_message(chat_id, f"❌ Eroare de sistem: {error_msg}")
                 
     return "OK", 200
+
+# Ascultă pe ambele rute pentru a elimina orice eroare 404 de la Telegram
+@app.route("/webhook", methods=["POST"])
+def webhook_alias():
+    return handle_telegram_update()
+
+@app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
+def webhook_token():
+    return handle_telegram_update()
 
 def send_telegram_message(chat_id, text):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
