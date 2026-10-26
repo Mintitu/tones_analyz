@@ -2,8 +2,8 @@ name: Raport Lunar Automat pe Email
 
 on:
   schedule:
-    # Ruleaza in prima zi a fiecarei luni la ora 07:00 UTC (09:00 ora Romaniei)
-    - cron: '0 7 1 * *'
+    # Ruleaza in prima zi a fiecarei luni la ora 06:00 UTC (09:00 ora Romaniei)
+    - cron: '0 6 1 * *'
   workflow_dispatch: # Permite declansarea manuala sau din Telegram/API
 
 jobs:
