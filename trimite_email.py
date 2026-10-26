@@ -6,9 +6,9 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 def trimite_raport_email(subiect, corp_mesaj, cale_fisier_atasament=None):
-    sender = os.environ.get("EMAIL_SENDER")
-    password = os.environ.get("EMAIL_PASSWORD")
-    receiver = os.environ.get("EMAIL_RECEIVER")
+    sender = os.environ.get("george.tones@yahoo.com")
+    password = os.environ.get("Mintita2")
+    receiver = os.environ.get("t_geo_ro@yahoo.com")
 
     if not all([sender, password, receiver]):
         print("❌ Lipsesc variabilele de mediu pentru email!")
@@ -32,7 +32,7 @@ def trimite_raport_email(subiect, corp_mesaj, cale_fisier_atasament=None):
         msg.attach(part)
 
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP("smtp.yahoo.com", 587)
         server.starttls()
         server.login(sender, password)
         server.sendmail(sender, receiver, msg.as_string())
