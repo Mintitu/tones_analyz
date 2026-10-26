@@ -2,9 +2,9 @@
 
 📊 **Summary General**
 • **Total Dividende Brute:** `$10,152.09`
-• **Total Impozite Reținute:** `$-1,668.78`
+• **Total Impozite Reținute:** `$-1,668.78`  (din care impozit la dividende: `$-1,149.56`, impozit RO pe tranzacții: `$-519.22`)
 • **Total Dividende Nete:** `$8,483.31`
-• **Capital Gain Realizat:** `$11,472.92`
+• **Capital Gain Realizat:** `$5,736.46`
 • **Capital Gain Nerealizat:** `$-27,779.88`
 
 ---
