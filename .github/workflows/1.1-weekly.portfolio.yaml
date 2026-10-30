@@ -1,4 +1,4 @@
-name: Weekly Portfolio Trend
+name: 1.1 Weekly Portfolio Trend
 on:
   workflow_dispatch:
   schedule:
@@ -17,19 +17,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Check syntax
-        run: python -m py_compile 1-1.weekly_portfolio.py
+        run: python -m py_compile 2.Saptamanal.py
       - name: Generate weekly report
         env:
           PORTFOLIO_FILE: USD_53476286_Open.xlsx
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           CONCENTRATION_PCT: '15'
-        run: python weekly_portfolio.py
+        run: python 2.Saptamanal.py
       - name: Save outputs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: weekly-report
+          name: Saptamanal
           path: output-weekly/
           if-no-files-found: warn
           retention-days: 90
