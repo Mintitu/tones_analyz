@@ -5,7 +5,7 @@ on:
     paths:
       - 'USD_53476286_*.xlsx'
       - '4.CapitalGain.py'
-  workflow_dispatch: # Permite pornirea manuală sau prin API-ul GitHub
+  workflow_dispatch:                                 # Permite pornirea manuală sau prin API-ul GitHub
 
 jobs:
   Conpilez:
