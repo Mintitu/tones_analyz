@@ -1,4 +1,4 @@
-name: Raport Saptamanal Unitar XTB
+name: 1.1 Analiza Saptamanala
 
 on:
   schedule:
@@ -25,4 +25,4 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python analiza_saptamanala.py
+        run: python 1.1analiza sambata.py
