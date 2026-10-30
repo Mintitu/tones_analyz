@@ -3,7 +3,7 @@ name: 3. Capital Gain
 on:
   push:
     paths:
-      - '*.xlsx'
+      - 'USD_53476286_*.xlsx'
       - '3.CapitalGain.py'
   workflow_dispatch:
 
