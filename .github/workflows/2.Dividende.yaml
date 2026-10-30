@@ -3,7 +3,7 @@ name: 2. Dividende status
 on:
   push:
     paths:
-      - '*.xlsx'
+      - 'USD_53476286_*.xlsx'
       - '2.Dividende.py'
   workflow_dispatch:
 
