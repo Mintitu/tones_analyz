@@ -1,11 +1,11 @@
-name: 1. Analiza portofoliu zilnica
+name: 1. Daily Portofoliu
 
 on:
   schedule:
     - cron: '0 20 * * 1-5'
   push:
     paths:
-      - '*.xlsx'
+      - 'USD_53476286_*.xlsx'
       - '1.Analiza.py'
   workflow_dispatch:
 
