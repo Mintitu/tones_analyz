@@ -1,0 +1,42 @@
+name: 2 Weekly Portfolio
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 6'      # sambata 06:00 UTC
+permissions:
+  contents: read
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt matplotlib
+      - name: Check syntax
+        run: python -m py_compile 2.Weekly.py
+      - name: Generate Weekly Report
+        env:
+          PORTFOLIO_FILE: USD_53476286_*.xlsx # Lăsat gol pentru căutare dinamică automată
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FAST_MA: '5'                 # medie rapida in sedinte (5 = 1 saptamana)
+          SLOW_MA: '10'                # medie lenta (10 = 2 saptamani)
+          RSI_PERIOD: '9'              # RSI pe ~2 saptamani
+          PROFIT_TAKE_PCT: '10'        # profit minim (%) pentru "ia profit" cand RSI >= 70
+          CONCENTRATION_PCT: '35'      # doar avertisment in raport, nu intra in semnal
+          CG_TAX_PCT: '10'             # impozit castig de capital (%)
+          DIV_TAX_PCT: '16'            # impozit dividende (%)
+          SEND_FILES: '1'              # trimite pe Telegram si .md/.xlsx, pe langa imagine
+        run: python 2.Weekly.py
+      - name: Save outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Weekly Report
+          path: output-weekly/
+          if-no-files-found: warn
+          retention-days: 90
