@@ -1,0 +1,28 @@
+name: Raport Saptamanal Unitar XTB
+
+on:
+  schedule:
+    # Rulează în fiecare sâmbătă la ora 06:00 UTC (08:00 ora României)
+    - cron: '0 6 * * 6'
+  workflow_dispatch: # Permite să îl rulezi și manual oricând vrei din GitHub sau Telegram
+
+jobs:
+  run-weekly-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descarcă codul din repository
+        uses: actions/checkout@v3
+
+      - name: Setează mediu Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Instalează dependențele
+        run: pip install requests pandas openpyxl
+
+      - name: Rulează scriptul de analiză și semnale
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python analiza_saptamanala.py
