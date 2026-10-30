@@ -1,4 +1,4 @@
-name: 2 Weekly Portfolio Trend
+name: 2 Weekly Portfolio
 on:
   workflow_dispatch:
   schedule:
