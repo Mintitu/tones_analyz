@@ -48,28 +48,98 @@ def portfolio(path):
     return df, str(stamp)
 
 
+def fmt_num(x, nd=6):
+    """Numar fara notatie stiintifica si fara zerouri in plus (ex. 27.8685, 2829)."""
+    t = f"{float(x):.{nd}f}".rstrip("0").rstrip(".")
+    return t if t not in ("", "-0") else "0"
+
+
 def export_wealthfolio(positions, anchor):
     """
-    Exportă pozițiile deschise în formatul nativ CSV suportat de Wealthfolio:
-    date, symbol, quantity, activityType, unitPrice, currency, fee
+    Genereaza fisiere CSV pentru Wealthfolio (UTF-8, separator virgula, fara BOM):
+
+    1) Wealthfolio_Holdings.csv   - instantaneu al pozitiilor (Symbol, Quantity, Average cost basis, Currency).
+       Pentru conturi urmarite pe "holdings"; se poate reimporta saptamanal fara sa dubleze pozitiile.
+    2) Wealthfolio_Activities.csv - cate un BUY per pozitie (date, symbol, quantity, activityType, unitPrice,
+       currency, fee, amount). Doar pentru prima incarcare intr-un cont urmarit pe tranzactii:
+       reimportat saptamanal ar aduna din nou aceleasi actiuni.
+
+    Controlat din env: WEALTHFOLIO_FILES = "holdings,activities" (implicit), "holdings" sau "activities".
     """
-    wealth_rows = []
-    # Folosim data de încheiere a săptămânii în formatul ISO cerut de Wealthfolio
-    date_str = f"{anchor}T00:00:00.000Z"
-    for _, p in positions.iterrows():
-        wealth_rows.append({
-            "date": date_str,
-            "symbol": p.symbol,
-            "quantity": p.Volume,
-            "activityType": "BUY",
-            "unitPrice": p["Open price"],
-            "currency": "USD",
-            "fee": 0
-        })
-    df_wealth = pd.DataFrame(wealth_rows)
-    wealth_path = OUT / "Wealthfolio.csv"
-    df_wealth.to_csv(wealth_path, index=False)
-    return wealth_path
+    which = os.getenv("WEALTHFOLIO_FILES", "holdings,activities").lower()
+    paths = []
+
+    if "holdings" in which:
+        rows = []
+        for _, p in positions.iterrows():
+            rows.append({
+                "Symbol": p.symbol,
+                "Quantity": fmt_num(p.Volume),
+                "Average cost basis": fmt_num(p["Open price"]),
+                "Currency": "USD",
+                "Description": str(p.get("Instrument/Position", p.symbol)),
+            })
+        path = OUT / "Wealthfolio_Holdings.csv"
+        pd.DataFrame(rows).to_csv(path, index=False, encoding="utf-8", lineterminator="\n")
+        paths.append(path)
+
+    if "activities" in which:
+        date_str = f"{anchor}T00:00:00.000Z"
+        rows = []
+        for _, p in positions.iterrows():
+            rows.append({
+                "date": date_str,
+                "symbol": p.symbol,
+                "quantity": fmt_num(p.Volume),
+                "activityType": "BUY",
+                "unitPrice": fmt_num(p["Open price"]),
+                "currency": "USD",
+                "fee": 0,
+                "amount": fmt_num(p.Volume * p["Open price"], 2),   # total final; altfel randul poate ramane Draft
+            })
+        path = OUT / "Wealthfolio_Activities.csv"
+        pd.DataFrame(rows).to_csv(path, index=False, encoding="utf-8", lineterminator="\n")
+        paths.append(path)
+
+    return paths
+
+
+def report_stamp(path):
+    """Data raportului XTB din foaia 'Open Positions' (None daca foaia lipseste)."""
+    try:
+        raw = pd.read_excel(path, sheet_name="Open Positions", header=None)
+    except Exception:
+        return None
+    for _, row in raw.iterrows():
+        if str(row.iloc[0]) == "Data as of report generated":
+            return pd.to_datetime(row.iloc[1], errors="coerce")
+    return pd.NaT
+
+
+def name_date(path):
+    """Ultima data YYYY-MM-DD din numele fisierului (ex. USD_53476286_2006-01-01_2026-10-15.xlsx -> 2026-10-15)."""
+    found = re.findall(r"\d{4}-\d{2}-\d{2}", path.name)
+    return pd.Timestamp(found[-1]) if found else pd.Timestamp.min
+
+
+def pick_portfolio_file():
+    """PORTFOLIO_FILE poate fi un nume sau un model cu * (ex. USD_53476286_*.xlsx).
+    Dintre fisierele gasite il alege pe cel mai recent dupa data raportului din Excel."""
+    pattern = os.getenv("PORTFOLIO_FILE", "").strip() or "USD_*.xlsx"
+    found = sorted(Path(p) for p in glob.glob(str(ROOT / pattern)))
+    valid = []
+    for p in found:
+        st = report_stamp(p)
+        if st is not None:
+            valid.append((st if pd.notna(st) else pd.Timestamp.min, name_date(p), p.name, p))
+    if not valid:
+        raise ValueError(f"Nu am gasit niciun Excel XTB cu foaia 'Open Positions' dupa modelul '{pattern}'.")
+    # Cel mai recent dupa data raportului din Excel; la egalitate, cel cu data cea mai noua in nume
+    # (fisierele fara data in nume, ex. USD_53476286_Open.xlsx, pierd la egalitate).
+    valid.sort(key=lambda t: (t[0], t[1], t[2]))
+    chosen = valid[-1][3]
+    print(f"Excel folosit: {chosen.name}" + (f" (ignorate: {', '.join(v[2] for v in valid[:-1])})" if len(valid) > 1 else ""))
+    return chosen
 
 
 def window():
@@ -154,10 +224,11 @@ def send(path):
     token, chat = os.getenv("TELEGRAM_BOT_TOKEN"), os.getenv("TELEGRAM_CHAT_ID")
     if not token or not chat:
         return "Telegram skipped: missing credentials"
+    mime = {".csv": "text/csv", ".md": "text/markdown"}.get(path.suffix.lower(), "application/octet-stream")
     try:
         with path.open("rb") as f:
             r = requests.post(f"https://api.telegram.org/bot{token}/sendDocument",
-                data={"chat_id": chat}, files={"document": f}, timeout=(15, 90))
+                data={"chat_id": chat}, files={"document": (path.name, f, mime)}, timeout=(15, 90))
         return f"{path.name}: sent" if r.ok and r.json().get("ok") else f"Telegram HTTP {r.status_code}"
     except Exception:
         return "Telegram failed; reports remain saved"
@@ -239,19 +310,7 @@ def make_image(rows, anchor, warning, path):
 def main():
     OUT.mkdir(exist_ok=True)
     
-    # Căutare dinamică a fișierului Excel XTB
-    configured = os.getenv("PORTFOLIO_FILE", "").strip()
-    candidates = sorted(ROOT.glob("USD_*.xlsx"))
-    
-    if configured and (ROOT / configured).exists():
-        path = ROOT / configured
-    elif len(candidates) == 1:
-        path = candidates[0]
-    elif len(candidates) > 1:
-        path = candidates[0]
-        print(f"ℹ️ Găsite mai multe fișiere Excel, se folosește: {path.name}")
-    else:
-        raise ValueError("Nu s-a găsit niciun fișier Excel care să înceapă cu USD_ în director!")
+    path = pick_portfolio_file()
 
     positions, stamp = portfolio(path)
     anchor, week, base, sessions = window()
@@ -459,8 +518,8 @@ def main():
     report = OUT / "weekly_report.md"
     report.write_text("\n".join(lines), encoding="utf-8")
 
-    # Am eliminat complet crearea și trimiterea fișierului .xlsx, generăm doar CSV-ul Wealthfolio
-    wealth_file = export_wealthfolio(positions, anchor)
+    # Fără .xlsx; generăm CSV-urile pentru Wealthfolio
+    wealth_files = export_wealthfolio(positions, anchor)
 
     image = OUT / "weekly_signals.png"
     statuses = []
@@ -470,7 +529,7 @@ def main():
         statuses.append("Imagine omisă: matplotlib lipsește")
         
     if SEND_FILES:
-        statuses += [send(report), send(wealth_file)] # Trimit .md și Wealthfolio.csv pe Telegram
+        statuses += [send(report)] + [send(p) for p in wealth_files]   # .md + CSV-urile Wealthfolio
         
     (OUT / "delivery-status.txt").write_text("\n".join(statuses))
     print(f"Generated report: week ending {anchor}, valid positions {available}/{len(rows)}")
