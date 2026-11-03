@@ -22,7 +22,7 @@ PROFIT_TAKE_PCT = float(os.getenv("PROFIT_TAKE_PCT", "10"))    # profit minim (%
 CONCENTRATION_PCT = float(os.getenv("CONCENTRATION_PCT", "35"))  # doar avertisment in raport, NU intra in semnal
 CG_TAX_PCT = float(os.getenv("CG_TAX_PCT", "10"))              # impozit pe castig de capital (%)
 DIV_TAX_PCT = float(os.getenv("DIV_TAX_PCT", "16"))            # impozit pe dividende (%)
-SEND_FILES = os.getenv("SEND_FILES", "1") == "1"               # trimite pe Telegram si .md/.xlsx
+SEND_FILES = os.getenv("SEND_FILES", "1") == "1"               # trimite pe Telegram .md si .csv (fara xlsx)
 
 
 def portfolio(path):
@@ -50,18 +50,21 @@ def portfolio(path):
 
 def export_wealthfolio(positions, anchor):
     """
-    Exportă pozițiile deschise în formatul CSV structurat pentru Wealthfolio.
+    Exportă pozițiile deschise în formatul nativ CSV suportat de Wealthfolio:
+    date, symbol, quantity, activityType, unitPrice, currency, fee
     """
     wealth_rows = []
+    # Folosim data de încheiere a săptămânii în formatul ISO cerut de Wealthfolio
+    date_str = f"{anchor}T00:00:00.000Z"
     for _, p in positions.iterrows():
         wealth_rows.append({
-            "Date": str(anchor),
-            "Symbol": p.symbol,
-            "Type": "BUY",
-            "Amount": p.Volume,
-            "Price": p["Open price"],
-            "Currency": "USD",
-            "Fee": 0
+            "date": date_str,
+            "symbol": p.symbol,
+            "quantity": p.Volume,
+            "activityType": "BUY",
+            "unitPrice": p["Open price"],
+            "currency": "USD",
+            "fee": 0
         })
     df_wealth = pd.DataFrame(wealth_rows)
     wealth_path = OUT / "Wealthfolio.csv"
@@ -456,11 +459,7 @@ def main():
     report = OUT / "weekly_report.md"
     report.write_text("\n".join(lines), encoding="utf-8")
 
-    with pd.ExcelWriter(OUT / "weekly_report.xlsx") as writer:
-        result.to_excel(writer, sheet_name="Weekly signals", index=False)
-        positions.to_excel(writer, sheet_name="Excel positions", index=False)
-
-    # Generare CSV pentru Wealthfolio
+    # Am eliminat complet crearea și trimiterea fișierului .xlsx, generăm doar CSV-ul Wealthfolio
     wealth_file = export_wealthfolio(positions, anchor)
 
     image = OUT / "weekly_signals.png"
@@ -469,8 +468,10 @@ def main():
         statuses.append(send_photo(image, f"Raport săptămânal - săptămâna încheiată {anchor}"))
     else:
         statuses.append("Imagine omisă: matplotlib lipsește")
+        
     if SEND_FILES:
-        statuses += [send(report), send(OUT / "weekly_report.xlsx"), send(wealth_file)]
+        statuses += [send(report), send(wealth_file)] # Trimit .md și Wealthfolio.csv pe Telegram
+        
     (OUT / "delivery-status.txt").write_text("\n".join(statuses))
     print(f"Generated report: week ending {anchor}, valid positions {available}/{len(rows)}")
     if available == 0:
