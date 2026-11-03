@@ -20,7 +20,7 @@ jobs:
         run: python -m py_compile 2.Weekly.py
       - name: Generate Weekly Report
         env:
-          PORTFOLIO_FILE: USD_53476286_*.xlsx # Lăsat gol pentru căutare dinamică automată
+          PORTFOLIO_FILE: USD_53476286_*.xlsx   # model cu *; scriptul alege Excel-ul cu cea mai recenta data a raportului
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FAST_MA: '5'                 # medie rapida in sedinte (5 = 1 saptamana)
@@ -30,7 +30,8 @@ jobs:
           CONCENTRATION_PCT: '35'      # doar avertisment in raport, nu intra in semnal
           CG_TAX_PCT: '10'             # impozit castig de capital (%)
           DIV_TAX_PCT: '16'            # impozit dividende (%)
-          SEND_FILES: '1'              # trimite pe Telegram si .md/.xlsx, pe langa imagine
+          SEND_FILES: '1'              # trimite pe Telegram .md + CSV-urile Wealthfolio
+          WEALTHFOLIO_FILES: 'holdings,activities'   # "holdings", "activities" sau ambele
         run: python 2.Weekly.py
       - name: Save outputs
         if: always()
