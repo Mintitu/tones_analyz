@@ -6,15 +6,15 @@ app = Flask(__name__)
 
 GITHUB_USER = "Mintitu"
 REPO_NAME = "tones_analyz"
-WORKFLOW_FILE = "1.Analiza.yaml"             # Workflow-ul pentru /raport
-DIVIDENDE_WORKFLOW_FILE = "3.Dividende.yaml"   # Workflow-ul pentru /dividend
-CAPITAL_WORKFLOW_FILE = "4.CapitalGain.yaml"   # Workflow-ul pentru /capital
+
+# Denumirile exacte ale workflow-urilor din .github/workflows/
+WORKFLOW_WEEKLY = "2.Weekly.yaml"           # Declanșat de /week
+DIVIDENDE_WORKFLOW_FILE = "3.Dividende.yaml" # Declanșat de /dividend
+CAPITAL_WORKFLOW_FILE = "4.CapitalGain.yaml"   # Declanșat de /capital
 
 GH_PAT = os.environ.get("GH_PAT", "").strip()
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-# Doar acest chat are voie sa porneasca rapoartele (pune-l in Render > Environment)
 ALLOWED_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-# Render seteaza singur RENDER_EXTERNAL_URL; fallback = adresa serviciului tau
 BASE_URL = os.environ.get("RENDER_EXTERNAL_URL", "https://tones-analyz.onrender.com").rstrip("/")
 
 
@@ -28,9 +28,9 @@ def setup_webhook():
             json={"url": BASE_URL + "/", "drop_pending_updates": True},
             timeout=15,
         )
-        print(f"setWebhook -> {BASE_URL}/ : HTTP {r.status_code} {r.json().get('description', '')}")
+        print(f"setWebhook -> {BASE_URL}/ : HTTP {r.status_code}")
     except Exception:
-        print("Eroare la setarea webhook-ului (conexiune).")
+        print("Eroare la setarea webhook-ului.")
 
 
 def send_telegram_message(chat_id, text):
@@ -44,11 +44,11 @@ def send_telegram_message(chat_id, text):
         print("Nu am putut trimite mesajul pe Telegram.")
 
 
-def trigger_github_workflow(chat_id, workflow_name, starting_msg, success_msg):
+def trigger_github_workflow(chat_id, workflow_filename, starting_msg):
     send_telegram_message(chat_id, starting_msg)
     url = (
         f"https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}"
-        f"/actions/workflows/{workflow_name}/dispatches"
+        f"/actions/workflows/{workflow_filename}/dispatches"
     )
     headers = {
         "Authorization": f"Bearer {GH_PAT}",
@@ -57,13 +57,15 @@ def trigger_github_workflow(chat_id, workflow_name, starting_msg, success_msg):
     }
     try:
         res = requests.post(url, json={"ref": "main"}, headers=headers, timeout=20)
-        print(f"GitHub API status ({workflow_name}): {res.status_code}")
+        print(f"GitHub API status ({workflow_filename}): {res.status_code} - {res.text}")
+        
         if res.status_code == 204:
-            send_telegram_message(chat_id, success_msg)
+            send_telegram_message(chat_id, f"✅ Acțiunea ({workflow_filename}) a pornit cu succes pe GitHub!")
         else:
-            send_telegram_message(chat_id, f"Eroare GitHub {res.status_code}: {res.text[:300]}")
-    except Exception:
-        send_telegram_message(chat_id, "Eroare la conectarea cu GitHub.")
+            send_telegram_message(chat_id, f"❌ Eroare GitHub {res.status_code}: Verifică numele fișierului sau PAT-ul.")
+    except Exception as e:
+        print(f"Eroare conexiune GitHub: {e}")
+        send_telegram_message(chat_id, "❌ Eroare la conectarea cu serverul GitHub.")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -81,37 +83,15 @@ def home():
     text = (message.get("text") or "").strip()
     command = text.split()[0].split("@")[0] if text else ""
 
-    if not ALLOWED_CHAT_ID:
-        send_telegram_message(
-            chat_id,
-            f"Chat ID-ul tau este {chat_id}. Pune-l in Render > Environment ca TELEGRAM_CHAT_ID.",
-        )
-        return "OK", 200
+    if ALLOWED_CHAT_ID and str(chat_id) != ALLOWED_CHAT_ID:
+        return "OK", 200  # Ignoră pe oricine altcineva
 
-    if str(chat_id) != ALLOWED_CHAT_ID:
-        return "OK", 200  # ignora pe oricine altcineva
-
-    if command == "/raport":
-        trigger_github_workflow(
-            chat_id,
-            WORKFLOW_FILE,
-            "Pornesc analiza pe GitHub...",
-            "GitHub Actions a pornit. Raportul vine in cateva minute."
-        )
+    if command == "/week":
+        trigger_github_workflow(chat_id, WORKFLOW_WEEKLY, "Pornesc raportul săptămânal...")
     elif command == "/dividend":
-        trigger_github_workflow(
-            chat_id,
-            DIVIDENDE_WORKFLOW_FILE,
-            "Calculez dividendele pe GitHub...",
-            "GitHub Actions a pornit calculul dividendelor. Raportul vine in cateva minute."
-        )
+        trigger_github_workflow(chat_id, DIVIDENDE_WORKFLOW_FILE, "Pornesc calculul dividendelor...")
     elif command == "/capital":
-        trigger_github_workflow(
-            chat_id,
-            CAPITAL_WORKFLOW_FILE,
-            "Calculez Capital Gain pe GitHub...",
-            "GitHub Actions a pornit calculul pentru Capital Gain. Raportul vine in cateva minute."
-        )
+        trigger_github_workflow(chat_id, CAPITAL_WORKFLOW_FILE, "Pornesc calculul Capital Gain...")
 
     return "OK", 200
 
