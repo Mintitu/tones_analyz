@@ -48,6 +48,27 @@ def portfolio(path):
     return df, str(stamp)
 
 
+def export_wealthfolio(positions, anchor):
+    """
+    Exportă pozițiile deschise în formatul CSV structurat pentru Wealthfolio.
+    """
+    wealth_rows = []
+    for _, p in positions.iterrows():
+        wealth_rows.append({
+            "Date": str(anchor),
+            "Symbol": p.symbol,
+            "Type": "BUY",
+            "Amount": p.Volume,
+            "Price": p["Open price"],
+            "Currency": "USD",
+            "Fee": 0
+        })
+    df_wealth = pd.DataFrame(wealth_rows)
+    wealth_path = OUT / "Wealthfolio.csv"
+    df_wealth.to_csv(wealth_path, index=False)
+    return wealth_path
+
+
 def window():
     today = datetime.now(ZoneInfo("America/New_York")).date()
     override = os.getenv("WEEK_END", "").strip()
@@ -215,7 +236,7 @@ def make_image(rows, anchor, warning, path):
 def main():
     OUT.mkdir(exist_ok=True)
     
-    # Căutare robustă a fișierului Excel XTB
+    # Căutare dinamică a fișierului Excel XTB
     configured = os.getenv("PORTFOLIO_FILE", "").strip()
     candidates = sorted(ROOT.glob("USD_*.xlsx"))
     
@@ -224,8 +245,8 @@ def main():
     elif len(candidates) == 1:
         path = candidates[0]
     elif len(candidates) > 1:
-        path = candidates[0]  # Ia cel mai recent sau primul găsit
-        print(g := f"ℹ️ Găsite mai multe fișiere Excel, se folosește: {path.name}")
+        path = candidates[0]
+        print(f"ℹ️ Găsite mai multe fișiere Excel, se folosește: {path.name}")
     else:
         raise ValueError("Nu s-a găsit niciun fișier Excel care să înceapă cu USD_ în director!")
 
@@ -439,6 +460,9 @@ def main():
         result.to_excel(writer, sheet_name="Weekly signals", index=False)
         positions.to_excel(writer, sheet_name="Excel positions", index=False)
 
+    # Generare CSV pentru Wealthfolio
+    wealth_file = export_wealthfolio(positions, anchor)
+
     image = OUT / "weekly_signals.png"
     statuses = []
     if make_image(rows, anchor, warning, image):
@@ -446,7 +470,7 @@ def main():
     else:
         statuses.append("Imagine omisă: matplotlib lipsește")
     if SEND_FILES:
-        statuses += [send(report), send(OUT / "weekly_report.xlsx")]
+        statuses += [send(report), send(OUT / "weekly_report.xlsx"), send(wealth_file)]
     (OUT / "delivery-status.txt").write_text("\n".join(statuses))
     print(f"Generated report: week ending {anchor}, valid positions {available}/{len(rows)}")
     if available == 0:
