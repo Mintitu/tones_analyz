@@ -6,11 +6,7 @@ app = Flask(__name__)
 
 GITHUB_USER = "Mintitu"
 REPO_NAME = "tones_analyz"
-
-# Denumirile exacte ale workflow-urilor din .github/workflows/
-WORKFLOW_WEEKLY = "2.Weekly.yaml"           # Declanșat de /week
-DIVIDENDE_WORKFLOW_FILE = "3.Dividende.yaml" # Declanșat de /dividend
-CAPITAL_WORKFLOW_FILE = "4.CapitalGain.yaml"   # Declanșat de /capital
+WORKFLOW_RAPORT = "1.Analiza.yaml"      # EXACT numele fisierului din .github/workflows/
 
 GH_PAT = os.environ.get("GH_PAT", "").strip()
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
@@ -19,18 +15,26 @@ BASE_URL = os.environ.get("RENDER_EXTERNAL_URL", "https://tones-analyz.onrender.
 
 
 def setup_webhook():
+    """Seteaza webhook-ul DOAR daca nu e deja setat corect.
+    Important: NU stergem mesajele in asteptare (drop_pending_updates), altfel comanda care a trezit
+    serverul s-ar pierde la fiecare pornire."""
     if not TELEGRAM_BOT_TOKEN:
         print("Lipseste TELEGRAM_BOT_TOKEN in Render > Environment.")
         return
+    wanted = BASE_URL + "/"
     try:
+        info = requests.get(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getWebhookInfo", timeout=15).json()
+        if info.get("ok") and info.get("result", {}).get("url") == wanted:
+            print("Webhook deja setat corect; nu il schimb.")
+            return
         r = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook",
-            json={"url": BASE_URL + "/", "drop_pending_updates": True},
+            json={"url": wanted},
             timeout=15,
         )
-        print(f"setWebhook -> {BASE_URL}/ : HTTP {r.status_code}")
+        print(f"setWebhook -> {wanted} : HTTP {r.status_code} {r.json().get('description', '')}")
     except Exception:
-        print("Eroare la setarea webhook-ului.")
+        print("Eroare la verificarea/setarea webhook-ului (conexiune).")  # fara exceptie: contine tokenul
 
 
 def send_telegram_message(chat_id, text):
@@ -44,28 +48,17 @@ def send_telegram_message(chat_id, text):
         print("Nu am putut trimite mesajul pe Telegram.")
 
 
-def trigger_github_workflow(chat_id, workflow_filename, starting_msg):
-    send_telegram_message(chat_id, starting_msg)
+def trigger_workflow(workflow_file):
     url = (
         f"https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}"
-        f"/actions/workflows/{workflow_filename}/dispatches"
+        f"/actions/workflows/{workflow_file}/dispatches"
     )
     headers = {
         "Authorization": f"Bearer {GH_PAT}",
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    try:
-        res = requests.post(url, json={"ref": "main"}, headers=headers, timeout=20)
-        print(f"GitHub API status ({workflow_filename}): {res.status_code} - {res.text}")
-        
-        if res.status_code == 204:
-            send_telegram_message(chat_id, f"✅ Acțiunea ({workflow_filename}) a pornit cu succes pe GitHub!")
-        else:
-            send_telegram_message(chat_id, f"❌ Eroare GitHub {res.status_code}: Verifică numele fișierului sau PAT-ul.")
-    except Exception as e:
-        print(f"Eroare conexiune GitHub: {e}")
-        send_telegram_message(chat_id, "❌ Eroare la conectarea cu serverul GitHub.")
+    return requests.post(url, json={"ref": "main"}, headers=headers, timeout=20)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -80,18 +73,29 @@ def home():
         return "OK", 200
 
     chat_id = message["chat"]["id"]
-    text = (message.get("text") or "").strip()
-    command = text.split()[0].split("@")[0] if text else ""
+    parts = (message.get("text") or "").split()
+    command = parts[0].split("@")[0] if parts else ""
 
-    if ALLOWED_CHAT_ID and str(chat_id) != ALLOWED_CHAT_ID:
-        return "OK", 200  # Ignoră pe oricine altcineva
+    if not ALLOWED_CHAT_ID:
+        send_telegram_message(
+            chat_id,
+            f"Chat ID-ul tau este {chat_id}. Pune-l in Render > Environment ca TELEGRAM_CHAT_ID.",
+        )
+        return "OK", 200
+    if str(chat_id) != ALLOWED_CHAT_ID:
+        return "OK", 200  # ignora pe oricine altcineva
 
-    if command == "/week":
-        trigger_github_workflow(chat_id, WORKFLOW_WEEKLY, "Pornesc raportul săptămânal...")
-    elif command == "/dividend":
-        trigger_github_workflow(chat_id, DIVIDENDE_WORKFLOW_FILE, "Pornesc calculul dividendelor...")
-    elif command == "/capital":
-        trigger_github_workflow(chat_id, CAPITAL_WORKFLOW_FILE, "Pornesc calculul Capital Gain...")
+    if command == "/raport":
+        send_telegram_message(chat_id, "Pornesc analiza pe GitHub...")
+        try:
+            res = trigger_workflow(WORKFLOW_RAPORT)
+            print(f"GitHub API status: {res.status_code}")
+            if res.status_code == 204:
+                send_telegram_message(chat_id, "GitHub Actions a pornit. Raportul vine in cateva minute.")
+            else:
+                send_telegram_message(chat_id, f"Eroare GitHub {res.status_code}: {res.text[:300]}")
+        except Exception:
+            send_telegram_message(chat_id, "Eroare la conectarea cu GitHub.")
 
     return "OK", 200
 
