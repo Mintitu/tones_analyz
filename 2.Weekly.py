@@ -20,8 +20,6 @@ RSI_PERIOD = int(os.getenv("RSI_PERIOD", "9"))                 # RSI pe ~2 sapta
 RSI_HOT = float(os.getenv("RSI_HOT", "70"))
 PROFIT_TAKE_PCT = float(os.getenv("PROFIT_TAKE_PCT", "10"))    # profit minim (%) pentru "ia profit" cand RSI e ridicat
 CONCENTRATION_PCT = float(os.getenv("CONCENTRATION_PCT", "35"))  # doar avertisment in raport, NU intra in semnal
-CG_TAX_PCT = float(os.getenv("CG_TAX_PCT", "10"))              # impozit pe castig de capital (%)
-DIV_TAX_PCT = float(os.getenv("DIV_TAX_PCT", "16"))            # impozit pe dividende (%)
 SEND_FILES = os.getenv("SEND_FILES", "1") == "1"               # trimite pe Telegram .md si .csv (fara xlsx)
 
 
@@ -152,7 +150,7 @@ def window():
     else:
         yesterday = today - timedelta(days=1)
         anchor = yesterday - timedelta(days=(yesterday.weekday() - 4) % 7)
-    sessions = mcal.get_calendar("NYSE").schedule(start_date=anchor-timedelta(days=1110), end_date=anchor).index
+    sessions = mcal.get_calendar("NYSE").schedule(start_date=anchor-timedelta(days=400), end_date=anchor).index
     sessions = pd.DatetimeIndex(sessions).tz_localize(None).normalize()
     week = sessions[sessions >= pd.Timestamp(anchor-timedelta(days=4))]
     if week.empty:
@@ -267,20 +265,21 @@ def make_image(rows, anchor, warning, path):
             return "0"
         return format(v, f"{'+' if sign else ''}.{nd}f")
 
-    header = ["Trend", "Semnal", "Ticker", "Săpt %", "2 săpt %", "RSI", "vs VWAP %", "CAGR 3A %", "vs max 52s %", "Vol rel."]
+    header = ["Trend", "Semnal", "Ticker", "Săpt %", "2 săpt %", "1 lună %", "3 luni %", "RSI", "vs VWAP %", "vs max 52s %", "Vol rel."]
     body = []
     for r in rows:
         body.append([r["trend"] or "n/a", r["signal_final"], r["ticker"],
-                     num(r["price_return_pct"], 1, True), num(r["ret_2w_pct"], 1, True), num(r["rsi14"], 0),
-                     num(r["vs_vwap_pct"], 1, True), num(r["cagr_3y_pct"], 1, True), num(r["vs_high52_pct"], 1, True),
+                     num(r["price_return_pct"], 1, True), num(r["ret_2w_pct"], 1, True),
+                     num(r["ret_1m_pct"], 1, True), num(r["ret_3m_pct"], 1, True), num(r["rsi14"], 0),
+                     num(r["vs_vwap_pct"], 1, True), num(r["vs_high52_pct"], 1, True),
                      "n/a" if r["vol_ratio"] is None else f"{r['vol_ratio']:.2f}x"])
 
     n = len(body)
-    fig, ax = plt.subplots(figsize=(13, 1.6 + 0.46 * n), facecolor=bg)
+    fig, ax = plt.subplots(figsize=(13.5, 1.6 + 0.46 * n), facecolor=bg)
     fig.subplots_adjust(left=0.01, right=0.99, top=0.86, bottom=0.14)
     ax.axis("off")
     tbl = ax.table(cellText=body, colLabels=header, loc="center", cellLoc="center",
-                   colWidths=[0.14, 0.17, 0.08, 0.08, 0.09, 0.06, 0.10, 0.10, 0.11, 0.07])
+                   colWidths=[0.13, 0.18, 0.07, 0.07, 0.07, 0.08, 0.08, 0.05, 0.09, 0.11, 0.07])
     tbl.auto_set_font_size(False)
     tbl.set_fontsize(11)
     tbl.scale(1, 1.7)
@@ -302,7 +301,7 @@ def make_image(rows, anchor, warning, path):
                 cell.get_text().set_fontweight("bold")
     fig.suptitle(f"Raport săptămânal - săptămâna încheiată {anchor}", color=fg, fontsize=14,
                  fontweight="bold", x=0.015, ha="left")
-    foot = ("VWAP = preț mediu ponderat cu volumul pe săptămână; CAGR 3A include dividendele (n/a sub 3 ani de istoric); "
+    foot = ("VWAP = preț mediu ponderat cu volumul pe săptămână; 1 lună / 3 luni = randament total cu dividende (21 / 63 ședințe); "
             "Vol rel. = volum săptămână / medie 20 ședințe.\nSemnale după reguli tehnice + poziția ta; nu sunt recomandări de investiții.")
     if warning:
         foot = warning + "\n" + foot
@@ -339,12 +338,11 @@ def main():
         row = {"ticker": p.symbol, "shares_excel": p.Volume, "average_cost_excel": p["Open price"],
                "value_excel": p.Value, "weight_excel_pct": p.weight_excel_pct,
                "start_close_date": str(base.date()), "end_close_date": str(end.date()),
-               "price_return_pct": None, "ret_2w_pct": None, "vwap_week": None, "vs_vwap_pct": None, "cagr_1y_pct": None,
-               "cagr_3y_pct": None, "vs_high52_pct": None, "vol_ratio": None, "adjusted_return_pct": None, "close_end": None,
+               "price_return_pct": None, "ret_2w_pct": None, "vwap_week": None, "vs_vwap_pct": None, "ret_1m_pct": None,
+               "ret_3m_pct": None, "vs_high52_pct": None, "vol_ratio": None, "adjusted_return_pct": None, "close_end": None,
                "ma_fast": None, "ma_slow": None, "rsi14": None, "excess_spy_pp": None, "trend": None,
-               "value_end_estimate": None, "unrealized_pct": None, "pnl_usd": None, "tax_if_sold_usd": None,
-               "net_if_sold_usd": None, "hypothetical_week_price_pnl": None, "weight_used_pct": p.weight_excel_pct,
-               "div_ttm_per_share": None, "div_net_annual_usd": None, "next_ex_div_est": "", "next_div_est": None,
+               "value_end_estimate": None, "unrealized_pct": None, "pnl_usd": None, "hypothetical_week_price_pnl": None, "weight_used_pct": p.weight_excel_pct,
+               "div_ttm_per_share": None, "next_ex_div_est": "", "next_div_est": None,
                "signal_tehnic": "FĂRĂ DATE", "signal_final": "FĂRĂ DATE", "motiv": "", "flags": ""}
         try:
             h = history(p.symbol, sessions)
@@ -370,7 +368,7 @@ def main():
             excess = ar - benchmark if benchmark is not None else None
 
             # Indicatori suplimentari (daca ceva lipseste in datele Yahoo, raman n/a, fara sa strice restul)
-            vwap = vs_vwap = cagr1 = cagr3 = vs_high = vol_ratio = None
+            vwap = vs_vwap = vs_high = vol_ratio = None
             try:
                 wk_vol = h.Volume.reindex(week)
                 wk_typ = ((h.High + h.Low + h.Close) / 3).reindex(week)
@@ -384,17 +382,13 @@ def main():
             except Exception:
                 pass
 
-            def cagr(years):
-                """CAGR total (cu dividende, pe Adj Close). None daca istoricul e mai scurt decat perioada."""
-                start = end - pd.DateOffset(years=years)
-                idx = adjusted.index[adjusted.index >= start]
-                if len(idx) == 0 or (idx[0] - start).days > 10:
+            def period_return(back):
+                """Randament total (cu dividende, pe Adj Close) fata de acum `back` sedinte; None daca istoricul e prea scurt."""
+                if len(adjusted) <= back:
                     return None
-                a0 = float(adjusted.loc[idx[0]])
-                if a0 <= 0:
-                    return None
-                return ((float(adjusted.loc[end]) / a0) ** (1 / years) - 1) * 100
-            cagr1, cagr3 = cagr(1), cagr(3)
+                a0 = float(adjusted.iloc[-1 - back])
+                return (float(adjusted.iloc[-1]) / a0 - 1) * 100 if a0 > 0 else None
+            ret1m, ret3m = period_return(21), period_return(63)      # 1 luna ~ 21 sedinte, 3 luni ~ 63
             flags = []
             if rsi >= RSI_HOT:
                 flags.append(f"RSI >={RSI_HOT:.0f}: impuls extins")
@@ -413,22 +407,20 @@ def main():
                 divs = divs[divs > 0]
                 ttm = float(divs[divs.index > end - pd.Timedelta(days=365)].sum())
                 row["div_ttm_per_share"] = ttm
-                row["div_net_annual_usd"] = float(p.Volume * ttm * (1 - DIV_TAX_PCT / 100))
                 nxt, amt = estimate_next_ex_dividend(divs, end)
                 if nxt is not None and (nxt - end).days <= 10:
                     row["next_ex_div_est"] = str(nxt.date())
                     row["next_div_est"] = amt
 
             pnl = float(p.Volume * (close.loc[end] - p["Open price"])) if comparable else None
-            tax = max(pnl, 0.0) * CG_TAX_PCT / 100 if pnl is not None else None
             row.update(price_return_pct=float(ret), ret_2w_pct=float(ret2), adjusted_return_pct=float(ar),
                 close_end=float(close.loc[end]), ma_fast=float(fast), ma_slow=float(slow), rsi14=float(rsi),
                 excess_spy_pp=excess, trend=trend_label(close.loc[end], fast, slow),
-                vwap_week=vwap, vs_vwap_pct=vs_vwap, cagr_1y_pct=cagr1, cagr_3y_pct=cagr3,
+                vwap_week=vwap, vs_vwap_pct=vs_vwap, ret_1m_pct=ret1m, ret_3m_pct=ret3m,
                 vs_high52_pct=vs_high, vol_ratio=vol_ratio,
                 value_end_estimate=float(p.Volume * close.loc[end]) if comparable else None,
                 unrealized_pct=float((close.loc[end] / p["Open price"] - 1) * 100) if comparable else None,
-                pnl_usd=pnl, tax_if_sold_usd=tax, net_if_sold_usd=(pnl - tax) if pnl is not None else None,
+                pnl_usd=pnl,
                 hypothetical_week_price_pnl=float(p.Volume * (close.loc[end] - close.loc[base])) if comparable else None,
                 flags="; ".join(flags))
             if not comparable:
@@ -458,10 +450,10 @@ def main():
         tech = technical_signal(r["trend"], r["rsi14"], r["price_return_pct"])
         final, why = final_signal(tech, r["rsi14"], r["unrealized_pct"])
         if final in ("VINDE", "VINDE PARȚIAL") and r["next_ex_div_est"] and r["next_div_est"]:
-            net_div = r["shares_excel"] * r["next_div_est"] * (1 - DIV_TAX_PCT / 100)
+            pos_div = r["shares_excel"] * r["next_div_est"]
             why = why.rstrip(".") + "."
             why += (f" Atenție: ex-dividend estimat ~{r['next_ex_div_est']} (~{r['next_div_est']:.2f}$/acțiune, "
-                    f"~{net_div:,.0f}$ net pentru toată poziția): dacă vinzi înainte, nu îl încasezi.")
+                    f"~{pos_div:,.0f}$ pentru toată poziția): dacă vinzi înainte, nu îl încasezi.")
         r.update(signal_tehnic=tech, signal_final=final, motiv=why)
         if r["weight_used_pct"] > CONCENTRATION_PCT:
             r["flags"] = (r["flags"] + "; " if r["flags"] else "") + \
@@ -486,31 +478,23 @@ def main():
         lines += ["", f"⚠️ {warning}"]
 
     lines += ["", "## Semnale (trend săptămânal + poziția ta)", "",
-              "| Trend | Semnal tehnic | Semnal final | Ticker | Săpt % | 2 săpt % | RSI | vs VWAP % | CAGR 1A % | CAGR 3A % | vs max 52s % | Vol rel. |",
+              "| Trend | Semnal tehnic | Semnal final | Ticker | Săpt % | 2 săpt % | 1 lună % | 3 luni % | RSI | vs VWAP % | vs max 52s % | Vol rel. |",
               "|:---|:---|:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for r in rows:
         lines.append(f"| {r['trend'] or 'n/a'} | {r['signal_tehnic']} | **{r['signal_final']}** | **{r['ticker']}** | "
-                     f"{fs(r['price_return_pct'])} | {fs(r['ret_2w_pct'])} | {f(r['rsi14'], 0)} | {fs(r['vs_vwap_pct'])} | "
-                     f"{fs(r['cagr_1y_pct'])} | {fs(r['cagr_3y_pct'])} | {fs(r['vs_high52_pct'])} | {fx(r['vol_ratio'])} |")
+                     f"{fs(r['price_return_pct'])} | {fs(r['ret_2w_pct'])} | {fs(r['ret_1m_pct'])} | {fs(r['ret_3m_pct'])} | "
+                     f"{f(r['rsi14'], 0)} | {fs(r['vs_vwap_pct'])} | {fs(r['vs_high52_pct'])} | {fx(r['vol_ratio'])} |")
 
     lines += ["", "## Detalii pe companii", ""]
     for r in rows:
         div_txt = ""
         if r["div_ttm_per_share"] is not None:
-            div_txt = (f" Dividende ultimele 12 luni: {r['div_ttm_per_share']:.2f}$/acțiune; "
-                       f"net după impozitul de {DIV_TAX_PCT:.0f}%: ~{r['div_net_annual_usd']:,.0f}$/an pentru poziția ta.")
-        tax_txt = ""
-        if r["pnl_usd"] is not None:
-            if r["pnl_usd"] > 0:
-                tax_txt = (f" Dacă vinzi acum: câștig {r['pnl_usd']:,.0f}$, impozit {CG_TAX_PCT:.0f}% ≈ {r['tax_if_sold_usd']:,.0f}$, "
-                           f"net ≈ {r['net_if_sold_usd']:,.0f}$.")
-            else:
-                tax_txt = f" Poziția e în pierdere ({r['pnl_usd']:,.0f}$); nu se plătește impozit pe câștig."
+            div_txt = f" Dividende ultimele 12 luni: {r['div_ttm_per_share']:.2f}$/acțiune."
         lines += [
             f"### {r['ticker']}  —  {r['signal_final']}",
-            f"Poziție: {r['shares_excel']} acțiuni; cost mediu {r['average_cost_excel']:.2f} USD; preț final {f(r['close_end'])}.{tax_txt}",
-            f"Indicatori: VWAP săptămânal {f(r['vwap_week'])} (prețul e {fs(r['vs_vwap_pct'])}% față de VWAP); CAGR 1A {fs(r['cagr_1y_pct'])}%, "
-            f"3A {fs(r['cagr_3y_pct'])}% (cu dividende); {fs(r['vs_high52_pct'])}% față de maximul pe 52 săptămâni; "
+            f"Poziție: {r['shares_excel']} acțiuni; cost mediu {r['average_cost_excel']:.2f} USD; preț final {f(r['close_end'])}.",
+            f"Indicatori: VWAP săptămânal {f(r['vwap_week'])} (prețul e {fs(r['vs_vwap_pct'])}% față de VWAP); randament 1 lună {fs(r['ret_1m_pct'])}%, "
+            f"3 luni {fs(r['ret_3m_pct'])}% (cu dividende); {fs(r['vs_high52_pct'])}% față de maximul pe 52 săptămâni; "
             f"volum săptămână {fx(r['vol_ratio'])} față de media pe 20 ședințe.",
             f"Trend: {r['trend'] or 'n/a'} (săptămână {f(r['price_return_pct'], 1)}%, 2 săptămâni {f(r['ret_2w_pct'], 1)}%, "
             f"față de SPY {f(r['excess_spy_pp'])} pp). MA{FAST_MA} {f(r['ma_fast'])}; MA{SLOW_MA} {f(r['ma_slow'])}; RSI{RSI_PERIOD} {f(r['rsi14'], 0)}.{div_txt}",
@@ -532,12 +516,10 @@ def main():
         "- Semnal final (cu poziția ta): trend descrescător pe profit = VINDE; trend descrescător în pierdere = NEUTRU (nu se vinde la pierdere).",
         f"- RSI ≥ {RSI_HOT:.0f} cu profit ≥ {PROFIT_TAKE_PCT:.0f}% = VINDE PARȚIAL (luare de profit). Trend crescător = CUMPĂRĂ.",
         "- VWAP săptămânal = Σ(preț tipic × volum) / Σ volum pe cele 5 ședințe (preț tipic = (High+Low+Close)/3). Prețul peste VWAP înseamnă că piața a închis peste prețul mediu plătit în săptămână.",
-        "- CAGR = rata anuală compusă a randamentului total (Adj Close, include dividendele) pe 1 și 3 ani; n/a dacă istoricul e mai scurt. "
+        "- 1 lună / 3 luni = randament total (Adj Close, include dividendele) față de acum 21 / 63 ședințe, fără anualizare. "
         "Vol rel. = volumul mediu al săptămânii / volumul mediu pe 20 ședințe. vs max 52s = distanța față de maximul ultimelor 252 ședințe.",
-        "- VWAP, CAGR, volum și distanța față de maxim sunt informative; nu intră în regulile de semnal.",
+        "- VWAP, randamentele pe 1/3 luni, volum și distanța față de maxim sunt informative; nu intră în regulile de semnal.",
         f"- Concentrarea nu intră în semnal; apare doar ca avertisment peste {CONCENTRATION_PCT:.0f}% din portofoliu.",
-        f"- Impozite folosite la estimări: {CG_TAX_PCT:.0f}% pe câștig de capital, {DIV_TAX_PCT:.0f}% pe dividende. Baza fiscală e aproximată prin costul mediu din Excel; "
-        "baza reală (lot cu lot) poate diferi.",
         "- Data ex-dividend este estimată din intervalul obișnuit dintre dividendele anterioare; verifică data oficială înainte de a decide.",
         "- Cantitățile/costurile sunt fotografia din Excel, nu un registru al tranzacțiilor din săptămână.",
         "- P/L săptămânal este ipotetic: aceleași cantități pe toată perioada, nu performanța reală a contului.",

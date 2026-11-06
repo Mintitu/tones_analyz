@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from flask import Flask, request
 
@@ -6,7 +7,10 @@ app = Flask(__name__)
 
 GITHUB_USER = "Mintitu"
 REPO_NAME = "tones_analyz"
-WORKFLOW_RAPORT = "1.Analiza.yaml"      # EXACT numele fisierului din .github/workflows/
+WORKFLOW_RAPORT = "1.Analiza.yaml"      # EXACT numele fisierelor din .github/workflows/
+WORKFLOW_EMAIL = "trimite_email.yaml"
+EMAIL_IMPLICIT = "pining78@yahoo.com"
+EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
 
 GH_PAT = os.environ.get("GH_PAT", "").strip()
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
@@ -48,7 +52,7 @@ def send_telegram_message(chat_id, text):
         print("Nu am putut trimite mesajul pe Telegram.")
 
 
-def trigger_workflow(workflow_file):
+def trigger_workflow(workflow_file, inputs=None):
     url = (
         f"https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}"
         f"/actions/workflows/{workflow_file}/dispatches"
@@ -58,7 +62,22 @@ def trigger_workflow(workflow_file):
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    return requests.post(url, json={"ref": "main"}, headers=headers, timeout=20)
+    body = {"ref": "main"}
+    if inputs:
+        body["inputs"] = inputs
+    return requests.post(url, json=body, headers=headers, timeout=20)
+
+
+def run_and_report(chat_id, workflow_file, ok_text, inputs=None):
+    try:
+        res = trigger_workflow(workflow_file, inputs)
+        print(f"GitHub API ({workflow_file}) status: {res.status_code}")
+        if res.status_code == 204:
+            send_telegram_message(chat_id, ok_text)
+        else:
+            send_telegram_message(chat_id, f"Eroare GitHub {res.status_code}: {res.text[:300]}")
+    except Exception:
+        send_telegram_message(chat_id, "Eroare la conectarea cu GitHub.")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -75,6 +94,7 @@ def home():
     chat_id = message["chat"]["id"]
     parts = (message.get("text") or "").split()
     command = parts[0].split("@")[0] if parts else ""
+    arg = parts[1] if len(parts) > 1 else ""
 
     if not ALLOWED_CHAT_ID:
         send_telegram_message(
@@ -87,15 +107,21 @@ def home():
 
     if command == "/raport":
         send_telegram_message(chat_id, "Pornesc analiza pe GitHub...")
-        try:
-            res = trigger_workflow(WORKFLOW_RAPORT)
-            print(f"GitHub API status: {res.status_code}")
-            if res.status_code == 204:
-                send_telegram_message(chat_id, "GitHub Actions a pornit. Raportul vine in cateva minute.")
-            else:
-                send_telegram_message(chat_id, f"Eroare GitHub {res.status_code}: {res.text[:300]}")
-        except Exception:
-            send_telegram_message(chat_id, "Eroare la conectarea cu GitHub.")
+        run_and_report(chat_id, WORKFLOW_RAPORT, "GitHub Actions a pornit. Raportul vine in cateva minute.")
+
+    elif command == "/email":
+        destinatar = arg or EMAIL_IMPLICIT
+        if not EMAIL_RE.match(destinatar):
+            send_telegram_message(chat_id, "Adresa de email nu este valida. Exemplu: /email nume@domeniu.com")
+        else:
+            send_telegram_message(chat_id, f"Trimit cele 3 fisiere pe email la {destinatar}...")
+            run_and_report(chat_id, WORKFLOW_EMAIL,
+                           "Workflow-ul de email a pornit. Emailul ajunge in cateva minute.",
+                           inputs={"destinatar": destinatar})
+
+    else:
+        # Orice alt mesaj/comanda trezeste serverul si primeste confirmare
+        send_telegram_message(chat_id, "Sunt treaz. Comenzi: /raport, /email [adresa]")
 
     return "OK", 200
 
