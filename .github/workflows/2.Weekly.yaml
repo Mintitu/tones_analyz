@@ -28,8 +28,6 @@ jobs:
           RSI_PERIOD: '9'              # RSI pe ~2 saptamani
           PROFIT_TAKE_PCT: '10'        # profit minim (%) pentru "ia profit" cand RSI >= 70
           CONCENTRATION_PCT: '35'      # doar avertisment in raport, nu intra in semnal
-          CG_TAX_PCT: '10'             # impozit castig de capital (%)
-          DIV_TAX_PCT: '16'            # impozit dividende (%)
           SEND_FILES: '1'              # trimite pe Telegram .md + CSV-urile Wealthfolio
           WEALTHFOLIO_FILES: 'holdings,activities'   # "holdings", "activities" sau ambele
         run: python 2.Weekly.py
