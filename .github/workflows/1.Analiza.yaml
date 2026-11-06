@@ -2,7 +2,7 @@ name: 1 Daily Portofolio
 
 on:
   schedule:
-    - cron: '30 19 * * 1-5' # Luni - Vineri la 19:30 UTC
+    - cron: '20 19 * * 1-5' # Luni - Vineri la 19:20 UTC
   push:
     paths:
       - 'USD_53476286_*.xlsx'
