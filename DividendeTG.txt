@@ -1,14 +1,14 @@
 📊 Dividende aferente anului 2026
 
 💰 Summary General:
-• Brute: $11,918.49
-• Impozite: $-1,845.41
-• Nete: $10,073.08
-• Capital Realizat: $5,736.46
+• Brute: $12,254.69
+• Impozite: $-1,937.11
+• Nete: $10,317.58
+• Capital Realizat: $6,234.30
 
 🏢 Top Încasări per Companie:
 🥇 REFI.US: $4,080.54
-🥈 DX.US: $2,737.00
+🥈 DX.US: $3,073.09
 🥉 APLE.US: $999.52
 🏅 SCM.US: $984.37
 🔹 ARR.US: $871.20
@@ -25,3 +25,4 @@
 🔹 CVX.US: $17.80
 🔹 MU.US: $0.45
 🔹 PK.US: $0.25
+🔹 PFLT.US: $0.11
