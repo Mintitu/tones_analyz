@@ -308,7 +308,7 @@ def main():
     print("Fișierul 'Analiza.md' a fost salvat cu succes!")
 
     # 2. RAPORT TELEGRAM (AnalizaTG.md)
-    report_text = f"📈 *Raport XTB* – `{current_time}`\n"
+    report_text = f"📈 *Raport* – `{current_time}`\n"
     report_text += f"📊 *P&L Total* `{sign}{total_gain_pct:.2f}%`\n"
     report_text += f"━━━━━━━━━━━━━━━━━━━━━━\n"
 
