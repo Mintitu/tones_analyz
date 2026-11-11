@@ -1,4 +1,4 @@
-name: 2 Weekly Portfolio
+name: 2 Weekly Portfolio Sunday
 on:
   workflow_dispatch:
   schedule:
