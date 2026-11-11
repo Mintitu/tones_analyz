@@ -5,7 +5,7 @@ Alerta zilnica S&P 500: scaderi mari pe un ticker, in sedinte de bursa (nu in zi
 - "48h"  = inchiderea de azi fata de inchiderea de acum 2 sedinte.
 Weekendul si sarbatorile nu sunt sedinte, deci luni "48h" = joi -> luni (vinerea e cuplata cu lunea).
 
-Trimite mesaj pe Telegram DOAR daca gaseste ceva. Daca nu gaseste nimic, nu trimite nimic.
+Semnale pe randamente ajustate pentru dividende. Trimite rezumat si fara semnale.
 """
 import html
 import os
@@ -19,6 +19,10 @@ import requests
 import yfinance as yf
 
 # Setari (se pot schimba din workflow, la env:)
+RISE_24H = float(os.getenv("RISE_24H", "7"))
+NOTIFY_NO_HITS = os.getenv("NOTIFY_NO_HITS", "1") == "1"
+TEST_TELEGRAM = os.getenv("TEST_TELEGRAM", "0") == "1"
+
 DROP_24H = float(os.getenv("DROP_24H", "7"))        # scadere mai mare de 7% fata de sedinta anterioara
 DROP_48H = float(os.getenv("DROP_48H", "14"))       # scadere mai mare de 14% fata de acum 2 sedinte
 ONLY_IF_SESSION_TODAY = os.getenv("ONLY_IF_SESSION_TODAY", "1") == "1"   # 0 = ruleaza oricand (test manual)
@@ -78,8 +82,8 @@ def download(tickers, batch=100):
         data = None
         for attempt in range(2):
             try:
-                data = yf.download(chunk, period="14d", interval="1d", auto_adjust=False,
-                                   progress=False, threads=True)
+                data = yf.download(chunk, period="3mo", interval="1d", auto_adjust=False,
+                                   progress=False, threads=True, repair=True)
                 if data is not None and not data.empty:
                     break
             except Exception:
@@ -104,6 +108,9 @@ def fmt_day(ts):
 
 
 def main():
+    if TEST_TELEGRAM and not send_telegram("Test Telegram: scanarea S&P 500 a pornit."):
+        print("Test Telegram esuat: verifica tokenul si chat_id in GitHub Secrets.")
+        sys.exit(1)
     names = get_constituents()
     tickers = list(names)
     print(f"Se analizeaza {len(tickers)} companii din S&P 500...")
@@ -116,14 +123,21 @@ def main():
     if ONLY_IF_SESSION_TODAY:
         now = now_ny()
         if d0.date() != now.date():
-            print(f"Nu a fost sedinta azi (ultima sedinta: {d0.date()}): weekend sau sarbatoare. Nu verific nimic.")
+            text = f"Scanare omisa: ultima data Yahoo {d0.date()}, data New York {now.date()}. Posibila zi fara sedinta sau date intarziate."
+            print(text)
+            if NOTIFY_NO_HITS and not send_telegram(html.escape(text)):
+                sys.exit(1)
             return
         if (now.hour, now.minute) < (16, 15):
-            print("Piata din SUA e inca deschisa; verificarea se face dupa inchidere. Nu verific nimic.")
+            print("Rulare programata inainte de 16:15 New York.")
+            if NOTIFY_NO_HITS and not send_telegram("Scanare omisa: inainte de 16:15 New York."):
+                sys.exit(1)
             return
 
     p0, p1, p2 = adj.loc[d0], adj.loc[d1], adj.loc[d2]
-    valid = p0.notna() & p1.notna() & p2.notna()
+    valid = (p0.notna() & p1.notna() & p2.notna() & (p0 > 0) & (p1 > 0) & (p2 > 0)
+             & raw.loc[d0].notna() & raw.loc[d1].notna() & raw.loc[d2].notna()
+             & (raw.loc[d0] > 0) & (raw.loc[d1] > 0) & (raw.loc[d2] > 0))
     coverage = valid.sum() / len(tickers)
     print(f"Date valide pentru {valid.sum()}/{len(tickers)} tickere ({coverage:.0%}).")
     if coverage < 0.9:
@@ -131,29 +145,57 @@ def main():
 
     pct24 = (p0 / p1 - 1) * 100
     pct48 = (p0 / p2 - 1) * 100
-    hit = valid & ((pct24 < -DROP_24H) | (pct48 < -DROP_48H))
+    raw24 = (raw.loc[d0] / raw.loc[d1] - 1) * 100
+    raw48 = (raw.loc[d0] / raw.loc[d2] - 1) * 100
+    rise = valid & (pct24 >= RISE_24H - 1e-9)
+    drop1 = valid & (pct24 <= -DROP_24H + 1e-9)
+    drop2 = valid & (pct48 <= -DROP_48H + 1e-9)
+    hit = rise | drop1 | drop2
+    price_only = valid & ~hit & ((raw24 <= -DROP_24H + 1e-9) | (raw48 <= -DROP_48H + 1e-9))
+
+    from pathlib import Path
+    out = Path("output-sp500")
+    out.mkdir(exist_ok=True)
+    audit = pd.DataFrame({"adjusted_1_session_pct": pct24,
+                          "adjusted_2_sessions_pct": pct48,
+                          "price_1_session_pct": raw24,
+                          "price_2_sessions_pct": raw48,
+                          "valid": valid, "alert": hit,
+                          "price_only_drop_not_alerted": price_only})
+    audit.index.name = "ticker"
+    audit.to_csv(out / "scan.csv")
 
     if not hit.any():
-        print("Nicio actiune nu a depasit pragurile. Nu trimit nimic.")
+        message = (f"S&amp;P 500 verificat: {d0.date()}. Date valide: {valid.sum()}/{len(tickers)}.\n"
+                   f"Niciun prag atins pe randament ajustat: +{RISE_24H:g}% / o sedinta, "
+                   f"-{DROP_24H:g}% / o sedinta sau -{DROP_48H:g}% / doua.\n"
+                   f"Scaderi doar pe pret neconfirmate pe ajustat: {int(price_only.sum())}.\n"
+                   "Ajustarile Yahoo pot contine erori sau intarzieri.")
+        print(html.unescape(message))
+        if NOTIFY_NO_HITS and not send_telegram(message):
+            sys.exit(1)
         return
 
-    order = pd.concat([pct24[hit], pct48[hit]], axis=1).min(axis=1).sort_values().index
-    header = (f"📉 <b>ALERTĂ S&amp;P 500</b> - {hit.sum()} acțiuni în scădere mare\n"
-              f"Sesiune: {fmt_day(d0)}. 24h = față de {fmt_day(d1)}; 48h = față de {fmt_day(d2)}.\n"
-              f"Praguri: 24h &lt; -{DROP_24H:g}%, 48h &lt; -{DROP_48H:g}% (⚠️ = prag depășit)\n")
-
+    order = pd.concat([pct24[hit].abs(), pct48[hit].abs()], axis=1).max(axis=1).sort_values(ascending=False).index
+    header = (f"<b>ALERTA S&amp;P 500 - AJUSTAT DIVIDENDE</b>: {hit.sum()} simboluri\n"
+              f"Sesiune {fmt_day(d0)}; referinte {fmt_day(d1)} / {fmt_day(d2)}.\n"
+              f"Praguri ajustate: +{RISE_24H:g}% / o sedinta, -{DROP_24H:g}% / o sedinta, -{DROP_48H:g}% / doua.\n"
+              "Pretul in dolari: Close. Semnale: Adj Close Yahoo.\n")
     lines = []
     for t in order:
-        w24 = "⚠️" if pct24[t] < -DROP_24H else ""
-        w48 = "⚠️" if pct48[t] < -DROP_48H else ""
-        name = names[t] if len(names[t]) <= 22 else names[t][:21] + "…"
-        lines.append(f"• <b>{html.escape(t)}</b> {html.escape(name)} | ${raw.loc[d0, t]:.2f} | "
-                     f"24h {pct24[t]:.1f}%{w24} | 48h {pct48[t]:.1f}%{w48}")
+        tags = []
+        if rise[t]: tags.append("CRESTERE")
+        if drop1[t]: tags.append("SCADERE 1S")
+        if drop2[t]: tags.append("SCADERE 2S")
+        name = names[t][:24]
+        lines.append(f"<b>{html.escape(t)}</b> {html.escape(name)} | ${raw.loc[d0,t]:.2f} | "
+                     f"ajustat 1S {pct24[t]:+.2f}%, 2S {pct48[t]:+.2f}% | "
+                     f"pret 1S {raw24[t]:+.2f}% | {', '.join(tags)}")
 
     # Jurnalul din GitHub Actions contine lista completa
     print("\n".join(lines))
 
-    # UN SINGUR mesaj Telegram (limita 4096 de caractere): ordonat de la cea mai mare scadere;
+    # Un singur mesaj; ordonare dupa magnitudinea miscarii ajustate;
     # daca nu incap toate (zi de prabusire), restul e doar numarat.
     limit = 3900
     message = header
