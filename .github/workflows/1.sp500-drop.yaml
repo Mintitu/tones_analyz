@@ -1,4 +1,4 @@
-name: 1 Daily SP500 Drop
+name: 1 Daily SP500 Adjusted Moves
 
 on:
   schedule:
@@ -12,7 +12,7 @@ permissions:
 jobs:
   Compilez:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -24,14 +24,29 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install pandas requests yfinance
+        run: pip install -r requirements-sp500.txt
 
-      - name: Run SP500-drop alert
+      - name: Check syntax
+        run: python -m py_compile 1.sp500-drop.py
+
+      - name: Run adjusted SP500 alert
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          DROP_24H: '7'          # scadere mai mare de 7% fata de sedinta anterioara
-          DROP_48H: '14'         # scadere mai mare de 14% fata de acum 2 sedinte
+          RISE_24H: '7'
+          NOTIFY_NO_HITS: '1'
+          TEST_TELEGRAM: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+          DROP_24H: '7'          # scadere ajustata de cel putin 7% fata de sedinta anterioara
+          DROP_48H: '14'         # scadere ajustata de cel putin 14% fata de acum 2 sedinte
           # La pornire manuala verifica ultima sedinta disponibila, chiar daca azi bursa e inchisa
           ONLY_IF_SESSION_TODAY: ${{ github.event_name == 'schedule' && '1' || '0' }}
         run: python 1.sp500-drop.py
+
+      - name: Save diagnostic CSV
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sp500-adjusted-scan
+          path: output-sp500/
+          if-no-files-found: warn
+          retention-days: 30
