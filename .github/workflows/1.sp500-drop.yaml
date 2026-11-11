@@ -1,4 +1,4 @@
-name: 1 Daily SP500 Adjusted Moves
+name: 1 Daily SP500 Drop Adjusted
 
 on:
   schedule:
