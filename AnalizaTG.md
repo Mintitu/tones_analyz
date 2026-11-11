@@ -1,27 +1,27 @@
-📈 *Raport* – `2026.11.10 21:30`
-📊 *P&L Total* `-17.34%`
+📈 *Raport* – `2026.11.11 20:14`
+📊 *P&L Total* `-18.09%`
 ━━━━━━━━━━━━━━━━━━━━━━
-*🔴35 REFI 9.26$ -23.8% (Scădere Mare)*
-`TP15.1$ Gap-19% EV- ROIC- RSI52 PE6.8 FwdPE4.8`
-*🔴35 DX 10.63$ -23.5% (Scădere Mare)*
-`TP12.6$ Gap-20% EV- ROIC- RSI44 PE38.0 FwdPE6.5`
-*🟧51 SCM 6.88$ -22.0% (Corecție Medie)*
-`TP10.1$ Gap-43% EV- ROIC- RSI57 PE6.7 FwdPE6.6`
-*🟧62 CAG 15.19$ -5.8% (Corecție Mică)*
-`TP13.7$ Gap-22% EV8.9x ROIC- RSI63 PE- FwdPE10.1`
-*🟢62 AVGO 331.98$ -5.7% (Discount Mediu)*
-`TP533.4$ Gap-33% EV29.9x ROIC- RSI48 PE42.4 FwdPE17.1`
-*🟢46 ARR 12.39$ -29.1% (Discount Mediu)*
-`TP15.6$ Gap-27% EV- ROIC- RSI41 PE247.8 FwdPE4.3`
-*🟢62 KGS 42.26$ -5.5% (Discount Mare)*
-`TP77.8$ Gap-45% EV9.4x ROIC- RSI39 PE24.7 FwdPE13.3`
-*🟧52 ARE 44.70$ -20.5% (Corecție Medie)*
-`TP49.9$ Gap-22% EV14.3x ROIC- RSI58 PE- FwdPE-47.6`
-*🟢55 QYLD 17.59$ +8.5% (Stabil / Mic)*
-`TP- Gap-5% EV- ROIC- RSI40 PE28.0 FwdPE-`
-*🟡50 AGNC 8.74$ -0.1% (Acumulare / Fair Value)*
-`TP9.5$ Gap-20% EV- ROIC- RSI52 PE437.0 FwdPE6.0`
-*🟢67 SPCX 143.09$ +3.8% (Discount Mare)*
-`TP255.1$ Gap-37% EV160.1x ROIC- RSI39 PE622.1 FwdPE53.7`
-*🟧46 PFLT 6.85$ +2.2% (Supracumpărat Mediu)*
-`TP9.6$ Gap-21% EV- ROIC- RSI72 PE13.4 FwdPE6.4`
+*🟢48 REFI 8.93$ -26.5% (Discount Mediu)*
+`TP14.8$ Gap-22% EV- ROIC- RSI40 PE7.4 FwdPE4.7`
+*🟢49 DX 10.47$ -24.7% (Discount Mediu)*
+`TP12.6$ Gap-21% EV- ROIC- RSI36 PE37.4 FwdPE6.4`
+*🔴50 SCM 6.75$ -23.5% (Scădere Mare)*
+`TP10.1$ Gap-44% EV- ROIC- RSI51 PE11.8 FwdPE6.4`
+*🟢60 CAG 14.85$ -7.8% (Discount Mediu)*
+`TP13.7$ Gap-23% EV8.8x ROIC- RSI50 PE- FwdPE9.9`
+*🟡65 AVGO 347.40$ -1.3% (Acumulare / Fair Value)*
+`TP533.4$ Gap-30% EV31.0x ROIC- RSI57 PE44.4 FwdPE17.8`
+*🟢45 ARR 12.20$ -30.1% (Discount Mediu)*
+`TP15.6$ Gap-28% EV- ROIC- RSI40 PE244.1 FwdPE4.3`
+*🟢64 KGS 43.53$ -2.7% (Discount Mediu)*
+`TP76.4$ Gap-44% EV9.0x ROIC- RSI49 PE25.5 FwdPE13.7`
+*🟧53 ARE 45.40$ -19.3% (Corecție Medie)*
+`TP49.9$ Gap-21% EV14.2x ROIC- RSI57 PE- FwdPE-48.3`
+*🟢57 QYLD 18.00$ +11.0% (Profit Solid)*
+`TP- Gap-3% EV- ROIC- RSI49 PE28.6 FwdPE-`
+*🟢64 AGNC 8.52$ -2.6% (Discount Mediu)*
+`TP9.5$ Gap-22% EV- ROIC- RSI43 PE426.2 FwdPE5.9`
+*🟢66 SPCX 141.41$ +2.6% (Discount Mediu)*
+`TP255.1$ Gap-37% EV161.3x ROIC- RSI47 PE614.7 FwdPE53.1`
+*🟡66 PFLT 6.82$ +1.9% (Neutru)*
+`TP9.6$ Gap-21% EV- ROIC- RSI66 PE13.4 FwdPE6.4`
