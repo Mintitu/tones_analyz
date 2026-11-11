@@ -1,17 +1,18 @@
-name: 1 Daily SP500 drop
+name: 1 Daily Portofolio
 
 on:
   schedule:
-    - cron: '20 19 * * 1-5' # Luni - Vineri la 19:20 UTC
-  push:
-    paths:
-      - '1.sp500-drop.py'
-      - '.github/workflows/1.sp500-drop.yaml'
-  workflow_dispatch:
+    # Luni-Vineri la 21:30 UTC = dupa inchiderea bursei SUA si vara (20:00 UTC) si iarna (21:00 UTC)
+    - cron: '30 21 * * 1-5'
+  workflow_dispatch:         # test manual: Actions > 1 Daily Portofolio > Run workflow
+
+permissions:
+  contents: read
 
 jobs:
   Compilez:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -20,25 +21,17 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas openpyxl requests yfinance tabulate
+        run: pip install pandas requests yfinance
 
-      - name: Run SP500-drop update script
+      - name: Run SP500-drop alert
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          python 1.sp500-drop.py
-
-      - name: Commit and push updated Markdown report
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add SP500-drop.md
-          git status
-          git diff-index --quiet HEAD || git commit -m "auto: update SP500-drop and telegram document"
-          git push
+          DROP_24H: '7'          # scadere mai mare de 7% fata de sedinta anterioara
+          DROP_48H: '14'         # scadere mai mare de 14% fata de acum 2 sedinte
+          # La pornire manuala verifica ultima sedinta disponibila, chiar daca azi bursa e inchisa
+          ONLY_IF_SESSION_TODAY: ${{ github.event_name == 'schedule' && '1' || '0' }}
+        run: python 1.sp500-drop.py
