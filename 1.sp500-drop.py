@@ -82,7 +82,7 @@ if alerts:
     )
 else:
   msg = (
-      f'✅ *S&P 500 Daily Check* ({current_time})\n\nNicio companie solidă pe'
+      f'✅ *S&P 500* ({current_time})\n\nNicio companie solidă pe'
       ' profit nu a atins pragul de scădere de -7% (24h) sau -14% (48h).'
   )
 
