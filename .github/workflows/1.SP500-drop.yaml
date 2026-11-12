@@ -1,0 +1,40 @@
+name: 1 Daily Portofolio
+
+on:
+  schedule:
+    # Luni-Vineri la 21:30 UTC = dupa inchiderea bursei SUA si vara (20:00 UTC) si iarna (21:00 UTC)
+    - cron: '30 21 * * 1-5'
+  workflow_dispatch:         # test manual: Actions > 1 Daily Portofolio > Run workflow
+
+permissions:
+  contents: read
+
+jobs:
+  Compilez:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install pandas requests yfinance
+
+      - name: Run SP500-drop alert
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DROP_24H: '7'          # scadere mai mare de 7% fata de sedinta anterioara
+          DROP_48H: '14'         # scadere mai mare de 14% fata de acum 2 sedinte
+          WATCH_24H: '5'         # semnal suplimentar: scadere mai mare de 5% pe ultima sesiune
+          ONLY_PROFITABLE: '1'   # doar companii pe profit (net income > 0 sau P/E > 0); 0 = toate
+          SEND_IF_NONE: '0'      # 1 = mesaj scurt si cand nu se gaseste nimic
+          # La pornire manuala verifica ultima sedinta disponibila, chiar daca azi bursa e inchisa
+          ONLY_IF_SESSION_TODAY: ${{ github.event_name == 'schedule' && '1' || '0' }}
+        run: python 1.sp500-drop.py
