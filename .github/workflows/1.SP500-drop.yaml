@@ -1,4 +1,4 @@
-name: 1 Daily Portofolio
+name: 1 SP500 Daily Drop
 
 on:
   schedule:
@@ -37,4 +37,4 @@ jobs:
           SEND_IF_NONE: '0'      # 1 = mesaj scurt si cand nu se gaseste nimic
           # La pornire manuala verifica ultima sedinta disponibila, chiar daca azi bursa e inchisa
           ONLY_IF_SESSION_TODAY: ${{ github.event_name == 'schedule' && '1' || '0' }}
-        run: python 1.sp500-drop.py
+        run: python 1.SP500-drop.py
