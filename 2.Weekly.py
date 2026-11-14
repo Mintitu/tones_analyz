@@ -36,9 +36,18 @@ def portfolio(path):
         raise ValueError("Missing or invalid portfolio values; no invented fallback")
     if (df.Volume <= 0).any() or (df.Value < 0).any():
         raise ValueError("This version supports long stock positions only")
-    if not df.Ticker.astype(str).str.endswith(".US").all():
-        raise ValueError("Non-US tickers require explicit mapping")
-    df["symbol"] = df.Ticker.str.removesuffix(".US").str.replace(".", "-", regex=False)
+    
+    # Gestionare flexibilă a tickerelor (suportă atât .US cât și alte piețe, înlocuind punctele cu cratime pentru Yahoo Finance)
+    symbols = []
+    for t in df.Ticker.astype(str):
+        if t.endswith(".US"):
+            sym = t.removesuffix(".US").replace(".", "-")
+        else:
+            # Pentru acțiuni non-US, păstrăm formatul compatibil Yahoo (ex: .DE, .UK etc.)
+            sym = t.replace(".", "-")
+        symbols.append(sym)
+    df["symbol"] = symbols
+
     if df.symbol.duplicated().any():
         raise ValueError("Duplicate parent ticker: review portfolio before aggregating")
     df["weight_excel_pct"] = df.Value / df.Value.sum() * 100
