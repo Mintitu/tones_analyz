@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 import time
 import glob
@@ -9,6 +9,11 @@ import pandas as pd
 import pandas_market_calendars as mcal
 import yfinance as yf
 import requests
+
+try:
+    import 2.Weekly-bdc          # tabelul separat pentru BDC-uri (fisierul 2.Weekly-bdc.py din repo)
+except Exception:
+    2.Weekly-bdc = None
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "output-weekly"
@@ -508,6 +513,20 @@ def main():
     else:
         lines += ["Nu se calculează valoarea integrală: acoperire incompletă / splituri nereconciliate."]
 
+    # Tabel separat pentru BDC-urile din portofoliu (fundamentale + semnal fundamental)
+    bdc_images = []
+    if 2.Weekly-bdc is not None:
+        try:
+            held = [(p.symbol, str(p.get("Instrument/Position", p.symbol))) for _, p in positions.iterrows()]
+            tech_by_ticker = {r["ticker"]: r["signal_final"] for r in rows}
+            bdc = 2.Weekly-bdc.run(held, tech_by_ticker, anchor, OUT)
+            lines += bdc["markdown"]
+            bdc_images = bdc["images"]
+        except Exception as e:
+            lines += ["", "## 🏦 BDC-uri din portofoliu", f"Tabelul BDC nu s-a putut genera ({e.__class__.__name__})."]
+    else:
+        lines += ["", "BDC: modulul 2.Weekly-bdc.py lipsește din repo, deci nu s-a generat tabelul BDC."]
+
     lines += [
         "", "## Reguli și limite",
         f"- Trend CRESCĂTOR: Close > MA{FAST_MA} > MA{SLOW_MA}. DESCRESCĂTOR: Close < MA{FAST_MA} < MA{SLOW_MA}. Altfel MIXT. "
@@ -552,6 +571,9 @@ def main():
     else:
         statuses.append("Imagine omisă: matplotlib lipsește")
         
+    if bdc_images and 2.Weekly-bdc is not None:
+        statuses.append(2.Weekly-bdc.send_album(bdc_images, f"BDC-uri - săptămâna încheiată {anchor}"))
+
     if SEND_FILES:
         statuses += [send(report)] + [send(p) for p in wealth_files]   # .md + CSV-urile Wealthfolio
         
@@ -563,3 +585,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
