@@ -1,4 +1,4 @@
-📈 *Raport* – `2026.11.15 13:09`
+📈 *Raport* – `2026.11.15 13:19`
 📊 *P&L Total* `-18.01%`
 ━━━━━━━━━━━━━━━━━━━━━━
 *🟢46 REFI 8.61$ -29.1% (Discount Mediu)*
@@ -10,13 +10,13 @@
 *🟧60 CAG 14.73$ -8.6% (Corecție Mică)*
 `TP13.7$ Gap-24% EV8.7x ROIC- RSI54 PE- FwdPE9.8`
 *🟡65 AVGO 347.01$ -1.4% (Acumulare / Fair Value)*
-`TP529.2$ Gap-30% EV32.4x ROIC- RSI55 PE44.3 FwdPE17.8`
+`TP529.2$ Gap-30% EV32.4x ROIC- RSI55 PE44.3 FwdPE17.9`
 *🟢84 NVDA 162.85$ -2.5% (Supravândut Mare)*
 `TP278.3$ Gap-33% EV19.4x ROIC- RSI19 PE20.6 FwdPE10.3`
 *🟢64 ARR 11.93$ -31.7% (Supravândut Mediu)*
 `TP15.6$ Gap-30% EV- ROIC- RSI35 PE238.6 FwdPE4.2`
 *🟢65 KGS 44.69$ -0.1% (Discount Mediu)*
-`TP72.6$ Gap-42% EV9.3x ROIC- RSI49 PE25.5 FwdPE15.1`
+`TP72.6$ Gap-42% EV9.3x ROIC- RSI49 PE25.7 FwdPE15.5`
 *🔴51 ARE 43.84$ -22.1% (Scădere Mare)*
 `TP49.2$ Gap-23% EV14.1x ROIC- RSI51 PE- FwdPE-46.6`
 *🟢62 AGNC 8.23$ -5.4% (Discount Mediu)*
