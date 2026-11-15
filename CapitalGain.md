@@ -2,8 +2,8 @@
 
 📊 **Summary General**
 • **Capital Gain Realizat:** `$6,234.30`
-• **Capital Gain Nerealizat (Poziții Deschise):** `$-29,278.10`
-• **Total Capital Gain:** `$-23,043.80`
+• **Capital Gain Nerealizat (Poziții Deschise):** `$-31,278.87`
+• **Total Capital Gain:** `$-25,044.57`
 
 ---
 📅 **Matrice Capital Gain Realizat (Companii vs. Luni)**
