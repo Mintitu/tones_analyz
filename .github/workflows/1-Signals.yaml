@@ -1,0 +1,40 @@
+name: Daily Swing Signals
+
+on:
+  schedule:
+    # Luni-Vineri la 21:30 UTC = dupa inchiderea NYSE si vara (20:00 UTC) si iarna (21:00 UTC)
+    - cron: '30 21 * * 1-5'
+  workflow_dispatch:        # test manual: Actions > Daily Swing Signals > Run workflow
+
+permissions:
+  contents: read
+
+jobs:
+  run-scanner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout cod
+        uses: actions/checkout@v4
+
+      - name: Configurare Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalare librarii
+        run: pip install pandas requests yfinance
+
+      - name: Rulare scanner
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # TICKERS: 'AAPL,MSFT,PEP,AVGO,ARCC,KGS,ARE,CAG,QYLD,PFLT,DX,SCM'   # lista implicita e in script
+          RSI_DIP: '42'
+          RSI_MAX_NOW: '60'
+          # Z_MAX: '-1'          # optional: cere si Z-score <= -1 in ultimele 5 sedinte
+          # VOL_MIN: '1'         # optional: cere volum azi >= media ultimelor 20 de sedinte
+          SEND_IF_NONE: '0'      # 1 = mesaj scurt si cand nu sunt semnale (ca sa stii ca a rulat)
+          # La pornire manuala scaneaza ultima sedinta disponibila, chiar daca azi bursa e inchisa
+          ONLY_IF_SESSION_TODAY: ${{ github.event_name == 'schedule' && '1' || '0' }}
+        run: python 1-Signals.py
