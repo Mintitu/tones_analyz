@@ -1,31 +1,31 @@
-📈 *Raport* – `2026.11.15 13:19`
-📊 *P&L Total* `-18.01%`
+📈 *Raport* – `2026.11.16 20:11`
+📊 *P&L Total* `-19.36%`
 ━━━━━━━━━━━━━━━━━━━━━━
-*🟢46 REFI 8.61$ -29.1% (Discount Mediu)*
-`TP14.8$ Gap-25% EV- ROIC- RSI36 PE7.2 FwdPE4.5`
-*🟢68 DX 10.07$ -25.6% (Supravândut Mediu)*
-`TP12.6$ Gap-24% EV- ROIC- RSI34 PE36.0 FwdPE6.2`
-*🔴51 SCM 6.75$ -22.3% (Scădere Mare)*
-`TP9.8$ Gap-44% EV- ROIC- RSI53 PE11.8 FwdPE6.6`
-*🟧60 CAG 14.73$ -8.6% (Corecție Mică)*
-`TP13.7$ Gap-24% EV8.7x ROIC- RSI54 PE- FwdPE9.8`
-*🟡65 AVGO 347.01$ -1.4% (Acumulare / Fair Value)*
-`TP529.2$ Gap-30% EV32.4x ROIC- RSI55 PE44.3 FwdPE17.9`
-*🟢84 NVDA 162.85$ -2.5% (Supravândut Mare)*
-`TP278.3$ Gap-33% EV19.4x ROIC- RSI19 PE20.6 FwdPE10.3`
-*🟢64 ARR 11.93$ -31.7% (Supravândut Mediu)*
-`TP15.6$ Gap-30% EV- ROIC- RSI35 PE238.6 FwdPE4.2`
-*🟢65 KGS 44.69$ -0.1% (Discount Mediu)*
-`TP72.6$ Gap-42% EV9.3x ROIC- RSI49 PE25.7 FwdPE15.5`
-*🔴51 ARE 43.84$ -22.1% (Scădere Mare)*
-`TP49.2$ Gap-23% EV14.1x ROIC- RSI51 PE- FwdPE-46.6`
-*🟢62 AGNC 8.23$ -5.4% (Discount Mediu)*
-`TP9.5$ Gap-25% EV- ROIC- RSI39 PE411.5 FwdPE5.7`
-*🟢56 QYLD 17.72$ +9.3% (Stabil / Mic)*
-`TP- Gap-5% EV- ROIC- RSI43 PE28.2 FwdPE-`
-*🟧62 TOYO 4.64$ -5.5% (Corecție Mică)*
-`TP14.0$ Gap-73% EV1.3x ROIC- RSI61 PE2.1 FwdPE1.1`
-*🟢65 SPCX 139.11$ +1.0% (Discount Mare)*
-`TP256.4$ Gap-38% EV156.7x ROIC- RSI44 PE604.8 FwdPE50.7`
-*🟡65 PFLT 6.66$ -0.6% (Neutru)*
-`TP9.6$ Gap-22% EV- ROIC- RSI62 PE13.1 FwdPE6.2`
+*🟢46 REFI 8.56$ -29.5% (Discount Mediu)*
+`TP14.8$ Gap-25% EV- ROIC- RSI37 PE7.1 FwdPE4.5`
+*🟢68 DX 9.95$ -26.5% (Supravândut Mediu)*
+`TP12.6$ Gap-25% EV- ROIC- RSI31 PE35.5 FwdPE6.1`
+*🟢50 SCM 6.63$ -23.7% (Discount Mediu)*
+`TP9.8$ Gap-45% EV- ROIC- RSI50 PE11.6 FwdPE6.4`
+*🟧61 CAG 15.10$ -6.3% (Corecție Mică)*
+`TP13.7$ Gap-22% EV8.7x ROIC- RSI62 PE- FwdPE10.1`
+*🟢62 AVGO 333.40$ -5.3% (Discount Mediu)*
+`TP528.2$ Gap-32% EV32.4x ROIC- RSI48 PE42.6 FwdPE17.2`
+*🟢81 NVDA 155.81$ -6.7% (Supravândut Mare)*
+`TP268.8$ Gap-36% EV19.4x ROIC- RSI16 PE19.7 FwdPE9.8`
+*🟢63 ARR 11.48$ -34.3% (Supravândut Mediu)*
+`TP15.6$ Gap-32% EV- ROIC- RSI30 PE229.7 FwdPE4.0`
+*🟢62 KGS 42.65$ -4.6% (Discount Mare)*
+`TP72.6$ Gap-45% EV9.3x ROIC- RSI41 PE24.5 FwdPE14.8`
+*🔴50 ARE 43.21$ -23.2% (Scădere Mare)*
+`TP49.2$ Gap-24% EV14.1x ROIC- RSI58 PE- FwdPE-46.0`
+*🟢81 AGNC 8.07$ -7.2% (Supravândut Mediu)*
+`TP9.5$ Gap-26% EV- ROIC- RSI33 PE403.8 FwdPE5.6`
+*🟢54 QYLD 17.27$ +6.5% (Stabil / Mic)*
+`TP- Gap-7% EV- ROIC- RSI37 PE27.5 FwdPE-`
+*🟧56 TOYO 4.23$ -13.8% (Corecție Medie)*
+`TP14.0$ Gap-76% EV1.3x ROIC- RSI55 PE1.9 FwdPE1.0`
+*🟢65 SPCX 138.88$ +0.8% (Discount Mare)*
+`TP255.6$ Gap-38% EV156.7x ROIC- RSI42 PE603.8 FwdPE50.6`
+*🟢64 PFLT 6.52$ -2.7% (Discount Mediu)*
+`TP9.6$ Gap-24% EV- ROIC- RSI49 PE12.8 FwdPE6.1`
