@@ -2,7 +2,7 @@
 Scanner swing pe portofoliul tau (tickerele vin din Excel-ul XTB) + backtest.
 
   python 1-Signals.py             -> scanare zilnica: semnale de INTRARE si de IESIRE pe Telegram (un singur mesaj,
-                                     doar daca exista ceva de spus)
+                                     daca nu ceva de spus ca nu sunt azi semnale)
   python 1-Signals.py --backtest  -> testeaza aceleasi reguli pe istoric si trimite raportul pe Telegram
 
 INTRARE: pret > SMA200 + MACD incrucisare in sus + RSI care a coborat recent (RSI min 5z <= RSI_DIP, acum < RSI_MAX_NOW).
@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "output-signals"
 
 # --- Setari (din workflow, la env:) -----------------------------------------------------------
-DEFAULT_TICKERS = "AAPL,MSFT,PEP,AVGO,ARCC,KGS,ARE,CAG,QYLD,PFLT,DX,SCM"     # doar daca nu gasesc Excel
+DEFAULT_TICKERS = "AAPL,AVGO,ARCC,KGS,ARE,CAG,QYLD,PFLT,DX,SCM"     # doar daca nu gasesc Excel, pai cum sami dai semnale daca nu sti pozitia?
 EXTRA_TICKERS = [t.strip().upper() for t in os.getenv("EXTRA_TICKERS", "").split(",") if t.strip()]  # de urmarit, fara sa le ai
 PORTFOLIO_FILE = os.getenv("PORTFOLIO_FILE", "").strip() or "USD_*.xlsx"
 RSI_DIP = float(os.getenv("RSI_DIP", "42"))              # intrare: RSI a coborat sub acest nivel in ultimele 5 sedinte
@@ -597,11 +597,11 @@ def main_backtest():
     lines += ["", "## Cum se citește", "",
               "- **Varianta 1** măsoară dacă semnalele au valoare în sine (cu o ieșire mecanică). Compară 'După 5/10/20z' cu 'Bază': "
               "dacă nu sunt clar peste bază, intrarea nu adaugă nimic față de a cumpăra într-o zi oarecare.",
-              "- **Varianta 2** urmărește regula ta de a nu vinde la pierdere. Câștigurile închise arată bine prin construcție; "
+              "- **Varianta 2** urmărește regula cui de a nu vinde la pierdere. Câștigurile închise arată bine prin construcție; "
               "partea importantă e 'Ret. mediu TOATE' (include pozițiile încă deschise), 'Scădere max.' și pozițiile rămase deschise: costul de a nu avea stop.",
               "- Numărul de tranzacții e mic (câteva pe ticker în 5 ani); mediile pe ticker sunt zgomotoase, totalul e mai de încredere. "
               "Dacă ajustezi pragurile RSI după aceste rezultate, riști să le potrivești pe trecut (overfitting).",
-              "- Fără impozite; costul presupus e setabil (COST_PCT). Prețuri ajustate: dividendele sunt incluse."]
+              "- Fără impozite; costul presupus e setabil (COST_PCT). Prețuri ajustate: dividendele nu sunt incluse."]
     md = OUT / "backtest_report.md"
     md.write_text("\n".join(lines), encoding="utf-8")
     print("\n".join(lines))
