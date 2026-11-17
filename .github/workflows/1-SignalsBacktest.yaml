@@ -1,0 +1,56 @@
+name: 1-Swing Backtest
+
+on:
+  workflow_dispatch:          # doar manual: Actions > Swing Backtest > Run workflow
+    inputs:
+      years:
+        description: 'Ani de istoric pentru backtest'
+        required: false
+        default: '5'
+      max_hold:
+        description: 'Varianta mecanica: iesire dupa maximum N sedinte'
+        required: false
+        default: '20'
+
+permissions:
+  contents: read
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout cod
+        uses: actions/checkout@v4
+
+      - name: Configurare Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalare librarii
+        run: pip install pandas requests yfinance openpyxl matplotlib
+
+      - name: Rulare backtest
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PORTFOLIO_FILE: USD_53476286_*.xlsx
+          # EXTRA_TICKERS: 'AAPL,MSFT'
+          BACKTEST_YEARS: ${{ inputs.years }}
+          MAX_HOLD: ${{ inputs.max_hold }}
+          COST_PCT: '0.1'        # cost per tranzactie (%), la intrare si la iesire
+          RSI_DIP: '42'
+          RSI_MAX_NOW: '60'
+          RSI_PEAK: '58'
+          RSI_MIN_NOW: '40'
+        run: python 1-Signals.py --backtest
+
+      - name: Salveaza rezultatele
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swing-backtest
+          path: output-signals/
+          if-no-files-found: warn
+          retention-days: 30

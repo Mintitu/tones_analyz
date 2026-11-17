@@ -1,4 +1,4 @@
-name: 1-Daily Swing Signals
+name: Daily Swing Signals
 
 on:
   schedule:
@@ -23,17 +23,21 @@ jobs:
           python-version: '3.12'
 
       - name: Instalare librarii
-        run: pip install pandas requests yfinance
+        run: pip install pandas requests yfinance openpyxl
 
       - name: Rulare scanner
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          # TICKERS: 'AAPL,MSFT,PEP,AVGO,ARCC,KGS,ARE,CAG,QYLD,PFLT,DX,SCM'   # lista implicita e in script
-          RSI_DIP: '42'
-          RSI_MAX_NOW: '60'
-          # Z_MAX: '-1'          # optional: cere si Z-score <= -1 in ultimele 5 sedinte
-          # VOL_MIN: '1'         # optional: cere volum azi >= media ultimelor 20 de sedinte
+          PORTFOLIO_FILE: USD_53476286_*.xlsx    # tickerele si pozitiile vin din cel mai recent Excel XTB din repo
+          # EXTRA_TICKERS: 'AAPL,MSFT'           # optional: tickere de urmarit pentru INTRARE, fara sa le ai
+          RSI_DIP: '42'          # intrare: RSI a coborat sub 42 in ultimele 5 sedinte
+          RSI_MAX_NOW: '60'      # intrare: ... si acum e sub 60
+          RSI_PEAK: '58'         # iesire: RSI a urcat peste 58 in ultimele 5 sedinte
+          RSI_MIN_NOW: '40'      # iesire: ... si acum e peste 40
+          MIN_POSITION_USD: '50' # sub aceasta valoare nu propun iesiri
+          # Z_MAX: '-1'          # optional (intrare): cere si Z-score <= -1 in ultimele 5 sedinte
+          # VOL_MIN: '1'         # optional (intrare): cere volum azi >= media ultimelor 20 de sedinte
           SEND_IF_NONE: '0'      # 1 = mesaj scurt si cand nu sunt semnale (ca sa stii ca a rulat)
           # La pornire manuala scaneaza ultima sedinta disponibila, chiar daca azi bursa e inchisa
           ONLY_IF_SESSION_TODAY: ${{ github.event_name == 'schedule' && '1' || '0' }}
