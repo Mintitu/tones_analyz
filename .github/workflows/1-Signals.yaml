@@ -1,0 +1,76 @@
+name: 1-Signals # Swing Portofoliu
+
+on:
+  schedule:
+    # Luni-Vineri la 21:30 UTC = dupa inchiderea NYSE si vara (20:00 UTC) si iarna (21:00 UTC)
+    - cron: '30 21 * * 1-5'
+  workflow_dispatch:        # manual din Actions sau din Telegram cu /signals
+    inputs:
+      mode:
+        description: 'scan = semnalele de azi | backtest = test pe istoric | both = ambele'
+        type: choice
+        options:
+          - scan
+          - backtest
+          - both
+        default: scan
+      years:
+        description: 'Backtest: ani de istoric'
+        required: false
+        default: '5'
+      max_hold:
+        description: 'Backtest, varianta mecanica: iesire dupa maximum N sedinte'
+        required: false
+        default: '20'
+
+permissions:
+  contents: read
+
+jobs:
+  run-scanner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout cod
+        uses: actions/checkout@v4
+
+      - name: Configurare Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalare librarii
+        run: pip install pandas requests yfinance openpyxl matplotlib
+
+      - name: Rulare scanner / backtest
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MODE: ${{ inputs.mode || 'scan' }}
+          PORTFOLIO_FILE: USD_53476286_*.xlsx    # tickerele si pozitiile vin din cel mai recent Excel XTB din repo
+          # EXTRA_TICKERS: 'AAPL,MSFT'           # optional: tickere de urmarit pentru INTRARE, fara sa le ai
+          RSI_DIP: '42'          # intrare: RSI a coborat sub 42 in ultimele 5 sedinte
+          RSI_MAX_NOW: '60'      # intrare: ... si acum e sub 60
+          RSI_PEAK: '58'         # iesire: RSI a urcat peste 58 in ultimele 5 sedinte
+          RSI_MIN_NOW: '40'      # iesire: ... si acum e peste 40
+          MIN_POSITION_USD: '50' # sub aceasta valoare nu propun iesiri
+          # Z_MAX: '-1'          # optional (intrare): cere si Z-score <= -1 in ultimele 5 sedinte
+          # VOL_MIN: '1'         # optional (intrare): cere volum azi >= media ultimelor 20 de sedinte
+          BACKTEST_CONTEXT: '1'  # 1 = la fiecare semnal de intrare adauga o linie cu istoricul pe acel ticker
+          BACKTEST_YEARS: ${{ inputs.years || '5' }}
+          MAX_HOLD: ${{ inputs.max_hold || '20' }}
+          COST_PCT: '0.1'        # backtest: cost per tranzactie (%), la intrare si la iesire
+          # Rularea programata tace cand nu sunt semnale; pornirea manuala (si /signals) raspunde mereu
+          SEND_IF_NONE: ${{ github.event_name == 'schedule' && '0' || '1' }}
+          # La pornire manuala scaneaza ultima sedinta disponibila, chiar daca azi bursa e inchisa
+          ONLY_IF_SESSION_TODAY: ${{ github.event_name == 'schedule' && '1' || '0' }}
+        run: python 1-Signals.py
+
+      - name: Salveaza rezultatele backtestului
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swing-signals
+          path: output-signals/
+          if-no-files-found: ignore
+          retention-days: 30
