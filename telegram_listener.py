@@ -9,6 +9,8 @@ GITHUB_USER = "Mintitu"
 REPO_NAME = "tones_analyz"
 WORKFLOW_RAPORT = "1.Analiza.yaml"      # EXACT numele fisierelor din .github/workflows/
 WORKFLOW_EMAIL = "trimite_email.yaml"
+WORKFLOW_SIGNALS = "1-Signals.yaml"
+SIGNALS_MODES = {"": "scan", "scan": "scan", "backtest": "backtest", "all": "both", "toate": "both", "both": "both"}
 EMAIL_IMPLICIT = "pining78@yahoo.com"
 EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
 
@@ -119,9 +121,19 @@ def home():
                            "Workflow-ul de email a pornit. Emailul ajunge in cateva minute.",
                            inputs={"destinatar": destinatar})
 
+    elif command == "/signals":
+        mode = SIGNALS_MODES.get(arg.lower())
+        if mode is None:
+            send_telegram_message(chat_id, "Foloseste: /signals (semnale de azi), /signals backtest, /signals all")
+        else:
+            what = {"scan": "semnalele de azi", "backtest": "backtestul", "both": "semnalele de azi si backtestul"}[mode]
+            send_telegram_message(chat_id, f"Pornesc {what} pe GitHub...")
+            run_and_report(chat_id, WORKFLOW_SIGNALS, "GitHub Actions a pornit. Rezultatul vine in cateva minute.",
+                           inputs={"mode": mode})
+
     else:
         # Orice alt mesaj/comanda trezeste serverul si primeste confirmare
-        send_telegram_message(chat_id, "Sunt treaz. Comenzi: /raport, /email [adresa]")
+        send_telegram_message(chat_id, "Sunt treaz. Comenzi: /raport, /signals [backtest|all], /email [adresa]")
 
     return "OK", 200
 
